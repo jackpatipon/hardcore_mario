@@ -22,7 +22,7 @@ public class Main {
 
             // Initialize Level from Stage 1 (hardcore_mario_stage1.drawio.xml)
             Level level = new Level(1);
-            Camera camera = new Camera(level.getWidth(), level.getHeight());
+            Camera camera = new Camera(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
             InputHandler inputHandler = new InputHandler();
 
             GamePanel gamePanel = new GamePanel(level, camera, inputHandler);

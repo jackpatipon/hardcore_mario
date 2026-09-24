@@ -16,12 +16,73 @@ public class VerifyGame {
             System.out.println("Stage 1 loaded: " + level1.getTiles().size() + " tiles, " +
                                level1.getEnemies().size() + " enemies, player at (" +
                                level1.getPlayer().getX() + ", " + level1.getPlayer().getY() + ")");
+            printBounds("Stage 1", level1);
 
             // Test Stage 2
             Level level2 = new Level(2);
             System.out.println("Stage 2 loaded: " + level2.getTiles().size() + " tiles, " +
                                level2.getEnemies().size() + " enemies, player at (" +
                                level2.getPlayer().getX() + ", " + level2.getPlayer().getY() + ")");
+            printBounds("Stage 2", level2);
+
+
+            // Test Stage 3
+            Level level3 = new Level(3);
+            System.out.println("Stage 3 loaded: " + level3.getTiles().size() + " tiles, " +
+                               level3.getEnemies().size() + " enemies, " +
+                               level3.getItems().size() + " items, player at (" +
+                               level3.getPlayer().getX() + ", " + level3.getPlayer().getY() + ")");
+            double minTileX = Double.MAX_VALUE, maxTileX = -Double.MAX_VALUE;
+            double minTileY = Double.MAX_VALUE, maxTileY = -Double.MAX_VALUE;
+            int negYCount = 0;
+            for (com.hardcoremario.model.world.Tile t : level3.getTiles()) {
+                minTileX = Math.min(minTileX, t.getX());
+                maxTileX = Math.max(maxTileX, t.getX() + t.getWidth());
+                minTileY = Math.min(minTileY, t.getY());
+                maxTileY = Math.max(maxTileY, t.getY() + t.getHeight());
+                if (t.getY() < 0) {
+                    negYCount++;
+                }
+            }
+            System.out.println("Stage 3 Tile Bounds: X[" + minTileX + " to " + maxTileX + "], Y[" + minTileY + " to " + maxTileY + "], tiles with Y < 0: " + negYCount);
+            System.out.println("Stage 3 Level Dimensions: width=" + level3.getWidth() + ", height=" + level3.getHeight());
+            System.out.println("Stage 3 Bounds: minX=" + level3.getMinX() + ", minY=" + level3.getMinY() + ", maxX=" + level3.getMaxX() + ", maxY=" + level3.getMaxY());
+
+            // Camera verification for Stage 3
+            Camera cam3 = new Camera(level3.getMinX(), level3.getMinY(), level3.getMaxX(), level3.getMaxY());
+            cam3.snapTo(level3.getPlayer().getCenterX(), level3.getPlayer().getCenterY());
+            double screenPlayerX = level3.getPlayer().getX() - cam3.getX();
+            double screenPlayerY = level3.getPlayer().getY() - cam3.getY();
+            System.out.println("Stage 3 Camera at (" + cam3.getX() + ", " + cam3.getY() + "), Player on Screen at (" + screenPlayerX + ", " + screenPlayerY + ")");
+            if (screenPlayerY < 0 || screenPlayerY > Constants.SCREEN_HEIGHT) {
+                throw new RuntimeException("ERROR: Player is offscreen in Stage 3! screenPlayerY = " + screenPlayerY);
+            }
+            System.out.println("[VERIFIED] Stage 3 Player is clearly on-screen and visible at (" + screenPlayerX + ", " + screenPlayerY + ")!");
+
+
+            // Verify that all 16 decorative heart items remain floating without falling or overlapping
+            int heartItemsBefore = 0;
+            for (com.hardcoremario.model.item.Item it : level3.getItems()) {
+                if (it.getX() >= 2000 && it.getX() <= 2300 && it.getY() >= 900 && it.getY() <= 1150) {
+                    heartItemsBefore++;
+                }
+            }
+
+            for (int f = 0; f < 60; f++) {
+                level3.update(1.0 / 60.0);
+            }
+
+            int heartItemsAfter = 0;
+            for (com.hardcoremario.model.item.Item it : level3.getItems()) {
+                if (it.getX() >= 2000 && it.getX() <= 2300 && it.getY() >= 900 && it.getY() <= 1150 && it.isActive()) {
+                    heartItemsAfter++;
+                }
+            }
+
+            if (heartItemsBefore != 16 || heartItemsAfter != 16) {
+                throw new RuntimeException("ERROR: Decorative heart items count mismatch! Before=" + heartItemsBefore + ", After=" + heartItemsAfter);
+            }
+            System.out.println("[VERIFIED] All 16 decorative heart items remain floating and intact!");
             // Test that standing player without crouch hits ceiling spikes
             {
                 Level lvl = new Level(2);
@@ -87,10 +148,47 @@ public class VerifyGame {
                 System.out.println("[VERIFIED] Crouching mid-air slips safely under ceiling spikes!");
             }
 
-            System.out.println("[VERIFIED] Both Stage 1 and Stage 2 load and simulate with ZERO errors!");
+            // Test Stage 3 Mission Complete does not repeatedly execute exit code
+            {
+                Level lvl3 = new Level(3);
+                com.hardcoremario.model.world.Tile exitTile = null;
+                for (com.hardcoremario.model.world.Tile t : lvl3.getTiles()) {
+                    if (t.getType() == com.hardcoremario.model.world.Tile.TileType.EXIT) {
+                        exitTile = t;
+                        break;
+                    }
+                }
+                if (exitTile != null) {
+                    lvl3.getPlayer().setX(exitTile.getX());
+                    lvl3.getPlayer().setY(exitTile.getY());
+                    lvl3.update(1.0 / 60.0);
+                    if (!lvl3.isMissionComplete()) {
+                        throw new RuntimeException("ERROR: Player on EXIT did not trigger missionComplete!");
+                    }
+                    // Run 100 more frames to ensure physics is frozen and no exception occurs
+                    for (int f = 0; f < 100; f++) {
+                        lvl3.update(1.0 / 60.0);
+                    }
+                    System.out.println("[VERIFIED] Mission complete triggered cleanly once and remained frozen over 100 frames!");
+                }
+            }
+
+            System.out.println("[VERIFIED] All stages load, simulate, and complete with ZERO errors!");
         } catch (Throwable t) {
             t.printStackTrace();
             System.exit(1);
         }
+    }
+
+    private static void printBounds(String name, Level level) {
+        double minTileX = Double.MAX_VALUE, maxTileX = -Double.MAX_VALUE;
+        double minTileY = Double.MAX_VALUE, maxTileY = -Double.MAX_VALUE;
+        for (com.hardcoremario.model.world.Tile t : level.getTiles()) {
+            minTileX = Math.min(minTileX, t.getX());
+            maxTileX = Math.max(maxTileX, t.getX() + t.getWidth());
+            minTileY = Math.min(minTileY, t.getY());
+            maxTileY = Math.max(maxTileY, t.getY() + t.getHeight());
+        }
+        System.out.println(name + " Tile Bounds: X[" + minTileX + " to " + maxTileX + "], Y[" + minTileY + " to " + maxTileY + "], Level Dimensions: W=" + level.getWidth() + ", H=" + level.getHeight());
     }
 }

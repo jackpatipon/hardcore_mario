@@ -17,24 +17,37 @@ import java.util.List;
 public abstract class Item extends Entity {
     protected double bobTimer = 0.0;
     protected boolean grounded = false;
+    protected boolean floating = false;
 
     public Item(double x, double y, int width, int height) {
         super(x, y, width, height);
     }
 
+    public boolean isFloating() { return floating; }
+    public void setFloating(boolean floating) { this.floating = floating; }
+
+    public boolean isGrounded() { return grounded; }
+    public void setGrounded(boolean grounded) { this.grounded = grounded; }
+
     @Override
     public void update(double deltaTime) {
-        // Apply gravity
-        velocity.setY(Math.min(velocity.getY() + Constants.GRAVITY * deltaTime, Constants.MAX_FALL_SPEED));
-
-        // Subtly bob only when grounded
-        if (grounded) {
-            bobTimer += deltaTime * 3.5;
+        if (!floating) {
+            // Apply gravity
+            velocity.setY(Math.min(velocity.getY() + Constants.GRAVITY * deltaTime, Constants.MAX_FALL_SPEED));
         }
+
+        // Subtly bob
+        bobTimer += deltaTime * 3.5;
     }
 
     public void updatePhysicsAndCollisions(List<Tile> tiles, double deltaTime) {
+        if (floating) {
+            // Floating/decorative items stay fixed at their designer-set position
+            return;
+        }
+
         // Move Y
+        double prevY = position.getY();
         position.setY(position.getY() + velocity.getY() * deltaTime);
         grounded = false;
 
@@ -51,7 +64,8 @@ public abstract class Item extends Entity {
 
             // 2. Solid tile collision (landing on block)
             if (tile.isSolid() && hb.intersects(tile.getHitbox())) {
-                if (velocity.getY() > 0) {
+                // Only land on top if falling downwards and was previously above the tile surface
+                if (velocity.getY() > 0 && prevY + height <= tile.getY() + 12) {
                     position.setY(tile.getY() - height);
                     velocity.setY(0);
                     grounded = true;

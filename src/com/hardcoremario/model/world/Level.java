@@ -25,9 +25,14 @@ import java.util.List;
  * Loads layout directly from draw.io XML files.
  */
 public class Level implements Updatable, Renderable {
+    private double minX = 0.0;
+    private double minY = 0.0;
+    private double maxX = 3600.0;
+    private double maxY = 1400.0;
     private double width;
     private double height;
     private int currentStage = 1;
+    private boolean stageChanged = true;
 
     private Player player;
     private final List<Tile> tiles = new ArrayList<>();
@@ -58,8 +63,13 @@ public class Level implements Updatable, Renderable {
         String stageFile = (stageF != null) ? stageF.getPath() : "assets/levels/hardcore_mario_stage" + stage + ".drawio.xml";
         DrawioLevelLoader.LevelData data = DrawioLevelLoader.loadLevel(stageFile);
 
+        this.minX = data.minX;
+        this.minY = data.minY;
+        this.maxX = data.maxX;
+        this.maxY = data.maxY;
         this.width = data.width;
         this.height = data.height;
+        this.stageChanged = true;
 
         // Spawn player from XML coordinates
         this.player = new Player(data.playerSpawnX, data.playerSpawnY);
@@ -81,6 +91,11 @@ public class Level implements Updatable, Renderable {
     public void update(double deltaTime) {
         if (player.isDead()) {
             gameOver = true;
+        }
+
+        // Freeze physics and prevent repetitive sound/trigger loops once level is ended
+        if (gameOver || missionComplete) {
+            ParticleSystem.getInstance().update(deltaTime);
             return;
         }
 
@@ -89,7 +104,7 @@ public class Level implements Updatable, Renderable {
         player.updatePhysicsAndCollisions(this, deltaTime);
 
         // Instant death if fallen out of world bounds
-        if (player.getY() > height + 100) {
+        if (player.getY() > maxY + 150) {
             player.takeDamage(99999);
             gameOver = true;
             return;
@@ -213,20 +228,23 @@ public class Level implements Updatable, Renderable {
         tiles.removeIf(t -> !t.isActive());
 
         // 5. Check Level Exit / Stage Progression
-        for (Tile tile : tiles) {
-            if (tile.getType() == Tile.TileType.EXIT && player.collidesWith(tile)) {
-                // Check if next stage exists
-                int nextStage = currentStage + 1;
-                File nextFile = DrawioLevelLoader.findStageFile(nextStage);
-                if (nextFile != null && nextFile.exists()) {
-                    SoundManager.getInstance().playVictory();
-                    loadStage(nextStage);
-                } else {
-                    // All stages completed!
-                    missionComplete = true;
-                    SoundManager.getInstance().playVictory();
+        if (!missionComplete) {
+            for (Tile tile : tiles) {
+                if (tile.getType() == Tile.TileType.EXIT && player.collidesWith(tile)) {
+                    // Check if next stage exists
+                    int nextStage = currentStage + 1;
+                    File nextFile = DrawioLevelLoader.findStageFile(nextStage);
+                    if (nextFile != null && nextFile.exists()) {
+                        SoundManager.getInstance().playVictory();
+                        loadStage(nextStage);
+                    } else {
+                        // All stages completed!
+                        missionComplete = true;
+                        SoundManager.getInstance().playVictory();
+                        ParticleSystem.getInstance().spawnSparks(player.getCenterX(), player.getCenterY(), Color.YELLOW);
+                    }
+                    break;
                 }
-                break;
             }
         }
 
@@ -292,6 +310,17 @@ public class Level implements Updatable, Renderable {
     public List<Item> getItems() { return items; }
     public double getWidth() { return width; }
     public double getHeight() { return height; }
+    public double getMinX() { return minX; }
+    public double getMinY() { return minY; }
+    public double getMaxX() { return maxX; }
+    public double getMaxY() { return maxY; }
+    public boolean consumeStageChanged() {
+        if (stageChanged) {
+            stageChanged = false;
+            return true;
+        }
+        return false;
+    }
     public boolean isMissionComplete() { return missionComplete; }
     public boolean isGameOver() { return gameOver; }
     public int getCurrentStage() { return currentStage; }

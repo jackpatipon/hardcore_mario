@@ -21,6 +21,10 @@ import org.w3c.dom.NodeList;
 public class DrawioLevelLoader {
 
     public static class LevelData {
+        public double minX = 0.0;
+        public double minY = 0.0;
+        public double maxX = 3600.0;
+        public double maxY = 1400.0;
         public double width = 3600.0;
         public double height = 1400.0;
         public double playerSpawnX = 520.0;
@@ -76,8 +80,10 @@ public class DrawioLevelLoader {
             NodeList cellNodes = doc.getElementsByTagName("mxCell");
             final double SCALE = 2.0; // Draw.io 20px grid -> 40px in-game tile size
 
-            double maxX = 0;
-            double maxY = 0;
+            double minX = Double.MAX_VALUE;
+            double minY = Double.MAX_VALUE;
+            double maxX = -Double.MAX_VALUE;
+            double maxY = -Double.MAX_VALUE;
 
             for (int i = 0; i < cellNodes.getLength(); i++) {
                 Element cell = (Element) cellNodes.item(i);
@@ -98,10 +104,11 @@ public class DrawioLevelLoader {
                 String wStr = geo.getAttribute("width");
                 String hStr = geo.getAttribute("height");
 
-                if (xStr.isEmpty() || yStr.isEmpty()) continue;
+                // In draw.io XML, attributes x and y default to 0.0 when omitted
+                if (xStr.isEmpty() && yStr.isEmpty() && wStr.isEmpty() && hStr.isEmpty()) continue;
 
-                double rawX = Double.parseDouble(xStr);
-                double rawY = Double.parseDouble(yStr);
+                double rawX = xStr.isEmpty() ? 0.0 : Double.parseDouble(xStr);
+                double rawY = yStr.isEmpty() ? 0.0 : Double.parseDouble(yStr);
                 double rawW = wStr.isEmpty() ? 20.0 : Double.parseDouble(wStr);
                 double rawH = hStr.isEmpty() ? 20.0 : Double.parseDouble(hStr);
 
@@ -119,48 +126,139 @@ public class DrawioLevelLoader {
                 double gameW = rawW * SCALE;
                 double gameH = rawH * SCALE;
 
-                maxX = Math.max(maxX, gameX + gameW);
-                maxY = Math.max(maxY, gameY + gameH);
-
                 Color fillColor = parseFillColor(style);
 
                 // Classify cell by value or style
                 if (value.equals("player")) {
                     data.playerSpawnX = gameX;
                     data.playerSpawnY = gameY;
+                    minX = Math.min(minX, gameX);
+                    minY = Math.min(minY, gameY);
+                    maxX = Math.max(maxX, gameX + 40.0);
+                    maxY = Math.max(maxY, gameY + 60.0);
                 } else if (value.equals("enemy")) {
                     data.enemies.add(new Guard(gameX, gameY, 0));
+                    minX = Math.min(minX, gameX);
+                    minY = Math.min(minY, gameY);
+                    maxX = Math.max(maxX, gameX + gameW);
+                    maxY = Math.max(maxY, gameY + gameH);
                 } else if (value.equals("exit") || style.contains("shape=loopLimit")) {
                     data.tiles.add(new Tile(gameX, gameY, (int) gameW, (int) gameH, Tile.TileType.EXIT));
+                    minX = Math.min(minX, gameX);
+                    minY = Math.min(minY, gameY);
+                    maxX = Math.max(maxX, gameX + gameW);
+                    maxY = Math.max(maxY, gameY + gameH);
                 } else if (style.contains("shape=cross")) {
                     // Item: Health Pack
-                    data.items.add(new HealthPack(gameX, gameY));
+                    int itemW = (int) Math.round(gameW > 0 ? gameW : 20);
+                    int itemH = (int) Math.round(gameH > 0 ? gameH : 20);
+                    HealthPack pack = new HealthPack(gameX, gameY, itemW, itemH);
+                    if (style.contains("decor") || value.contains("decor") || style.contains("locked=1") || style.contains("movable=0")) {
+                        pack.setFloating(true);
+                    }
+                    data.items.add(pack);
+                    minX = Math.min(minX, gameX);
+                    minY = Math.min(minY, gameY);
+                    maxX = Math.max(maxX, gameX + itemW);
+                    maxY = Math.max(maxY, gameY + itemH);
                 } else if (style.contains("triangle") || style.contains("rotation=-90")) {
                     // Hazard: Spikes (Instant death)
                     boolean isFlipped = style.contains("flipV=1") || style.contains("flipH=1") || style.contains("rotation=90");
                     Tile spikeTile = new Tile(gameX, gameY, (int) gameW, (int) gameH, Tile.TileType.SPIKES);
                     spikeTile.setPointingDown(isFlipped);
                     data.tiles.add(spikeTile);
+                    minX = Math.min(minX, gameX);
+                    minY = Math.min(minY, gameY);
+                    maxX = Math.max(maxX, gameX + gameW);
+                    maxY = Math.max(maxY, gameY + gameH);
                 } else if (style.contains("fillColor=light-dark(#0050EF,#FF8000)") || style.contains("#FF8000")) {
                     // Breakable block (Shootable by player only)
                     data.tiles.add(new Tile(gameX, gameY, (int) gameW, (int) gameH, Tile.TileType.BREAKABLE_BLOCK));
+                    minX = Math.min(minX, gameX);
+                    minY = Math.min(minY, gameY);
+                    maxX = Math.max(maxX, gameX + gameW);
+                    maxY = Math.max(maxY, gameY + gameH);
                 } else if (style.contains("fillColor=#0050ef")) {
                     // Indestructible solid blue block
                     data.tiles.add(new Tile(gameX, gameY, (int) gameW, (int) gameH, Tile.TileType.SOLID_BLOCK));
+                    minX = Math.min(minX, gameX);
+                    minY = Math.min(minY, gameY);
+                    maxX = Math.max(maxX, gameX + gameW);
+                    maxY = Math.max(maxY, gameY + gameH);
                 } else if (rawW > 100 && rawY >= 500) {
                     // Solid ground floor (uses custom color if specified in draw.io)
                     data.tiles.add(new Tile(gameX, gameY, (int) gameW, (int) gameH, Tile.TileType.GROUND, fillColor));
+                    minX = Math.min(minX, gameX);
+                    minY = Math.min(minY, gameY);
+                    maxX = Math.max(maxX, gameX + gameW);
+                    maxY = Math.max(maxY, gameY + gameH);
                 } else if (rawW > 0 && rawH > 0 && !style.contains("text")) {
                     // Other solid block
                     data.tiles.add(new Tile(gameX, gameY, (int) gameW, (int) gameH, Tile.TileType.SOLID_BLOCK, fillColor));
+                    minX = Math.min(minX, gameX);
+                    minY = Math.min(minY, gameY);
+                    maxX = Math.max(maxX, gameX + gameW);
+                    maxY = Math.max(maxY, gameY + gameH);
+                }
+            }
+
+
+            // Determine item floating vs grounded physics:
+            // 1. If multiple items are vertically aligned in the same column (like decorative pixel-art patterns),
+            //    they must float (otherwise gravity would make them fall and merge on top of each other).
+            for (HealthPack item : data.items) {
+                for (HealthPack other : data.items) {
+                    if (item == other) continue;
+                    if (Math.abs(item.getX() - other.getX()) < 15) {
+                        item.setFloating(true);
+                        other.setFloating(true);
+                    }
+                }
+            }
+
+            // 2. For isolated items: items placed directly on a block rest on it and will fall if the block breaks.
+            //    Items placed floating in mid-air float in place.
+            for (HealthPack item : data.items) {
+                if (item.isFloating()) continue;
+                boolean hasFloorBelow = false;
+                double itemBottom = item.getY() + item.getHeight();
+                for (Tile tile : data.tiles) {
+                    if (!tile.isSolid()) continue;
+                    // Check horizontal alignment with tile
+                    if (tile.getX() <= item.getCenterX() && item.getCenterX() <= tile.getX() + tile.getWidth()) {
+                        // Check if tile top is directly underneath item bottom (within 16px)
+                        if (tile.getY() >= itemBottom - 4 && tile.getY() - itemBottom <= 16) {
+                            hasFloorBelow = true;
+                            break;
+                        }
+                    }
+                }
+                if (!hasFloorBelow) {
+                    item.setFloating(true);
                 }
             }
 
             // Set world bounds with padding
-            data.width = Math.max(3400.0, maxX + 200.0);
-            data.height = Math.max(1400.0, maxY + 100.0);
+            if (minX == Double.MAX_VALUE) {
+                minX = 0;
+                minY = 0;
+                maxX = 3400;
+                maxY = 1400;
+            }
 
-            System.out.println("Loaded Draw.io Stage 1 from " + xmlFilePath + ": " +
+            double boundMinX = Math.min(0.0, minX);
+            double boundMinY = Math.min(0.0, minY < 0 ? minY - 260.0 : 0.0);
+            double boundMaxX = Math.max(3400.0, maxX + 200.0);
+            double boundMaxY = Math.max(1400.0, maxY + 100.0);
+
+            data.minX = boundMinX;
+            data.minY = boundMinY;
+            data.maxX = boundMaxX;
+            data.maxY = boundMaxY;
+            data.width = boundMaxX - boundMinX;
+            data.height = boundMaxY - boundMinY;
+
+            System.out.println("Loaded Level from " + xmlFilePath + ": " +
                                data.tiles.size() + " tiles, " +
                                data.enemies.size() + " enemies, " +
                                data.items.size() + " items.");
@@ -290,6 +388,10 @@ public class DrawioLevelLoader {
         // Exit Portal: x=1500, y=390
         data.tiles.add(new Tile(1500 * S, 390 * S, (int) (62.5 * S), (int) (50 * S), Tile.TileType.EXIT));
 
+        data.minX = 0.0;
+        data.minY = 0.0;
+        data.maxX = 3400.0;
+        data.maxY = 1400.0;
         data.width = 3400.0;
         data.height = 1400.0;
         return data;

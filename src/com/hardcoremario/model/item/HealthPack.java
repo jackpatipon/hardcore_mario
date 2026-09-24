@@ -13,12 +13,17 @@ public class HealthPack extends Item {
     private final int healAmount;
 
     public HealthPack(double x, double y) {
-        super(x, y, 32, 32);
+        super(x, y, 24, 24);
         this.healAmount = 30;
     }
 
-    public HealthPack(double x, double y, int healAmount) {
-        super(x, y, 32, 32);
+    public HealthPack(double x, double y, int width, int height) {
+        super(x, y, width, height);
+        this.healAmount = 30;
+    }
+
+    public HealthPack(double x, double y, int healAmount, int width, int height) {
+        super(x, y, width, height);
         this.healAmount = healAmount;
     }
 
@@ -44,17 +49,18 @@ public class HealthPack extends Item {
 
         // Soft green glow behind health pack
         g.setColor(new Color(50, 255, 100, 60));
-        g.fillOval(drawX - 4, drawY - 4, width + 8, height + 8);
+        g.fillOval(drawX - 2, drawY - 2, width + 4, height + 4);
 
         BufferedImage img = AssetManager.getInstance().getImage("health_pack");
         if (img != null) {
             g.drawImage(img, drawX, drawY, width, height, null);
         } else {
             g.setColor(Color.WHITE);
-            g.fillRoundRect(drawX, drawY, width, height, 6, 6);
-            g.setColor(Color.RED);
-            g.fillRect(drawX + width / 2 - 2, drawY + 4, 4, height - 8);
-            g.fillRect(drawX + 4, drawY + height / 2 - 2, width - 8, 4);
+            g.fillRoundRect(drawX, drawY, width, height, Math.min(6, width / 3), Math.min(6, height / 3));
+            g.setColor(new Color(230, 40, 40));
+            int crossThick = Math.max(2, width / 5);
+            g.fillRect(drawX + (width - crossThick) / 2, drawY + 2, crossThick, height - 4);
+            g.fillRect(drawX + 2, drawY + (height - crossThick) / 2, width - 4, crossThick);
         }
     }
 }

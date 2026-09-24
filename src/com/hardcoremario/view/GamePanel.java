@@ -39,6 +39,10 @@ public class GamePanel extends JPanel {
         BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         Cursor blankCursor = toolkit.createCustomCursor(cursorImg, new Point(0, 0), "blank cursor");
         setCursor(blankCursor);
+
+        // Snap camera immediately to player spawn within level bounds
+        camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
+        camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
     }
 
     public void updateGame(double deltaTime) {
@@ -53,13 +57,20 @@ public class GamePanel extends JPanel {
         // Restart check
         if ((level.isGameOver() || level.isMissionComplete()) && inputHandler.consumeRestart()) {
             level.reset();
+            camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
+            camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
             return;
         }
 
         if (!paused) {
+            if (level.consumeStageChanged()) {
+                camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
+                camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
+            }
+
             level.handleInput(inputHandler, camera, deltaTime);
             level.update(deltaTime);
-            camera.setLevelBounds(level.getWidth(), level.getHeight());
+            camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
             camera.update(level.getPlayer().getCenterX(), level.getPlayer().getCenterY(), deltaTime);
         }
     }
@@ -104,17 +115,21 @@ public class GamePanel extends JPanel {
 
         // Distant background scrolls at 20% speed
         if (bgFar != null) {
-            int farOffsetX = (int) (-(camX * 0.2) % bgFar.getWidth());
-            for (int x = farOffsetX - bgFar.getWidth(); x < getWidth() + bgFar.getWidth(); x += bgFar.getWidth()) {
-                g.drawImage(bgFar, x, 0, bgFar.getWidth(), getHeight(), null);
+            int w = bgFar.getWidth();
+            int farOffsetX = (int) (-(camX * 0.2) % w);
+            while (farOffsetX > 0) farOffsetX -= w;
+            for (int x = farOffsetX; x < getWidth() + w; x += w) {
+                g.drawImage(bgFar, x, 0, w, getHeight(), null);
             }
         }
 
         // Main facility background scrolls at 50% speed
         if (bgMain != null) {
-            int mainOffsetX = (int) (-(camX * 0.5) % bgMain.getWidth());
-            for (int x = mainOffsetX - bgMain.getWidth(); x < getWidth() + bgMain.getWidth(); x += bgMain.getWidth()) {
-                g.drawImage(bgMain, x, 0, bgMain.getWidth(), getHeight(), null);
+            int w = bgMain.getWidth();
+            int mainOffsetX = (int) (-(camX * 0.5) % w);
+            while (mainOffsetX > 0) mainOffsetX -= w;
+            for (int x = mainOffsetX; x < getWidth() + w; x += w) {
+                g.drawImage(bgMain, x, 0, w, getHeight(), null);
             }
         }
     }
