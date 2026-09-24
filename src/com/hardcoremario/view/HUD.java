@@ -84,6 +84,15 @@ public class HUD {
         g.setColor(new Color(255, 100, 100));
         g.drawString("KILLS: " + player.getKills(), killX + 12, killY + 18);
 
+        // Stage Indicator (Top Center)
+        g.setColor(new Color(20, 20, 20, 210));
+        g.fillRoundRect(Constants.SCREEN_WIDTH / 2 - 60, 14, 120, 32, 10, 10);
+        g.setColor(new Color(0, 255, 255));
+        g.drawRoundRect(Constants.SCREEN_WIDTH / 2 - 60, 14, 120, 32, 10, 10);
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 14));
+        g.drawString("STAGE " + level.getCurrentStage(), Constants.SCREEN_WIDTH / 2 - 32, 35);
+
         // 4. Subtle Controls Hint (Bottom Left)
         g.setColor(new Color(255, 255, 255, 150));
         g.setFont(new Font("Arial", Font.PLAIN, 11));

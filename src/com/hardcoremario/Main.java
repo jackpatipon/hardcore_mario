@@ -20,12 +20,9 @@ public class Main {
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setResizable(false);
 
-            // Initialize level with 3200px width for side-scrolling exploration
-            double levelWidth = 3200.0;
-            double levelHeight = Constants.SCREEN_HEIGHT;
-
-            Level level = new Level(levelWidth, levelHeight);
-            Camera camera = new Camera(levelWidth, levelHeight);
+            // Initialize Level from Stage 1 (hardcore_mario_stage1.drawio.xml)
+            Level level = new Level(1);
+            Camera camera = new Camera(level.getWidth(), level.getHeight());
             InputHandler inputHandler = new InputHandler();
 
             GamePanel gamePanel = new GamePanel(level, camera, inputHandler);

@@ -8,8 +8,6 @@ import com.hardcoremario.core.Updatable;
 import com.hardcoremario.model.entity.Enemy;
 import com.hardcoremario.model.entity.Guard;
 import com.hardcoremario.model.entity.Player;
-import com.hardcoremario.model.item.AmmoPack;
-import com.hardcoremario.model.item.HealthPack;
 import com.hardcoremario.model.item.Item;
 import com.hardcoremario.model.projectile.EnemyBullet;
 import com.hardcoremario.model.projectile.PlayerBullet;
@@ -17,17 +15,19 @@ import com.hardcoremario.model.projectile.Projectile;
 import com.hardcoremario.util.Constants;
 import com.hardcoremario.view.ParticleSystem;
 import java.awt.*;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 /**
- * Level encapsulates all game entities, platforms, combat logic, and win/loss state.
- * Demonstrates Aggregation and High-level System Management in OOP.
+ * Level manages all game objects, physics updates, combat, hazards, and stage progression.
+ * Loads layout directly from draw.io XML files.
  */
 public class Level implements Updatable, Renderable {
-    private final double width;
-    private final double height;
+    private double width;
+    private double height;
+    private int currentStage = 1;
 
     private Player player;
     private final List<Tile> tiles = new ArrayList<>();
@@ -37,14 +37,15 @@ public class Level implements Updatable, Renderable {
 
     private boolean missionComplete = false;
     private boolean gameOver = false;
+    private String statusMessage = "";
 
-    public Level(double width, double height) {
-        this.width = width;
-        this.height = height;
-        buildLevelLayout();
+    public Level(int stageNumber) {
+        this.currentStage = stageNumber;
+        loadStage(stageNumber);
     }
 
-    private void buildLevelLayout() {
+    public void loadStage(int stage) {
+        this.currentStage = stage;
         tiles.clear();
         enemies.clear();
         projectiles.clear();
@@ -53,93 +54,20 @@ public class Level implements Updatable, Renderable {
         missionComplete = false;
         gameOver = false;
 
-        // Player spawn in underground lab
-        player = new Player(120, height - 160);
+        String stageFile = "hardcore_mario_stage" + stage + ".drawio.xml";
+        DrawioLevelLoader.LevelData data = DrawioLevelLoader.loadLevel(stageFile);
 
-        int ts = Constants.TILE_SIZE;
-        int cols = (int) (width / ts);
+        this.width = data.width;
+        this.height = data.height;
 
-        // 1. Solid Ground along the entire level
-        for (int c = 0; c < cols; c++) {
-            // Gap / pit around column 26..28 and 48..50 for jumping challenge
-            if ((c >= 25 && c <= 27) || (c >= 48 && c <= 50)) {
-                // Pit with spikes at the bottom!
-                tiles.add(new Tile(c * ts, height - ts, ts, ts, Tile.TileType.SPIKES));
-                continue;
-            }
-            tiles.add(new Tile(c * ts, height - ts, ts, ts, Tile.TileType.GROUND));
-            tiles.add(new Tile(c * ts, height - ts * 2, ts, ts, Tile.TileType.GROUND));
-        }
+        // Spawn player from XML coordinates
+        this.player = new Player(data.playerSpawnX, data.playerSpawnY);
 
-        // Left Boundary Wall
-        for (int r = 0; r < (height / ts); r++) {
-            tiles.add(new Tile(0, r * ts, ts, ts, Tile.TileType.METAL));
-        }
+        this.tiles.addAll(data.tiles);
+        this.enemies.addAll(data.enemies);
+        this.items.addAll(data.items);
 
-        // Section 1: Starting Lab Obstacles & Floating Platforms
-        addPlatform(260, height - ts * 5, 4);
-        addPlatform(520, height - ts * 7, 5);
-        addPlatform(800, height - ts * 4, 3);
-        tiles.add(new Tile(440, height - ts * 3, ts, ts, Tile.TileType.BARREL));
-
-        // Guards in Section 1
-        enemies.add(new Guard(550, height - ts * 8, 120));
-        enemies.add(new Guard(820, height - ts * 5, 80));
-        enemies.add(new Guard(680, height - ts * 3, 140));
-
-        // Items in Section 1
-        items.add(new HealthPack(320, height - ts * 6));
-        items.add(new AmmoPack(580, height - ts * 8));
-
-        // Section 2: Elevated Combat Walkway across Pit 1
-        addPlatform(1150, height - ts * 5, 6);
-        addPlatform(1480, height - ts * 7, 4);
-        addPlatform(1720, height - ts * 4, 5);
-        tiles.add(new Tile(1280, height - ts * 6, ts, ts, Tile.TileType.BARREL));
-        tiles.add(new Tile(1800, height - ts * 5, ts, ts, Tile.TileType.BARREL));
-
-        // Guards in Section 2
-        enemies.add(new Guard(1200, height - ts * 6, 160));
-        enemies.add(new Guard(1520, height - ts * 8, 100));
-        enemies.add(new Guard(1760, height - ts * 5, 140));
-        enemies.add(new Guard(1400, height - ts * 3, 150));
-
-        // Items in Section 2
-        items.add(new HealthPack(1500, height - ts * 8));
-        items.add(new AmmoPack(1750, height - ts * 5));
-
-        // Section 3: High Security Facility before Exit
-        addPlatform(2050, height - ts * 6, 4);
-        addPlatform(2300, height - ts * 8, 5);
-        addPlatform(2600, height - ts * 5, 6);
-        addPlatform(2880, height - ts * 4, 4);
-
-        // Heavy Guard squad
-        enemies.add(new Guard(2100, height - ts * 7, 100));
-        enemies.add(new Guard(2350, height - ts * 9, 140));
-        enemies.add(new Guard(2650, height - ts * 6, 180));
-        enemies.add(new Guard(2920, height - ts * 5, 100));
-        enemies.add(new Guard(2700, height - ts * 3, 200));
-
-        // Final Items
-        items.add(new HealthPack(2340, height - ts * 9));
-        items.add(new AmmoPack(2660, height - ts * 6));
-        items.add(new HealthPack(2900, height - ts * 5));
-
-        // Extraction Portal (Exit) at the end of the lab
-        tiles.add(new Tile(width - 240, height - ts * 4, ts * 2, ts * 2, Tile.TileType.EXIT));
-
-        // Right Boundary Wall
-        for (int r = 0; r < (height / ts); r++) {
-            tiles.add(new Tile(width - ts, r * ts, ts, ts, Tile.TileType.METAL));
-        }
-    }
-
-    private void addPlatform(double x, double y, int tileCount) {
-        int ts = Constants.TILE_SIZE;
-        for (int i = 0; i < tileCount; i++) {
-            tiles.add(new Tile(x + i * ts, y, ts, ts, Tile.TileType.PLATFORM));
-        }
+        statusMessage = "STAGE " + currentStage + " START!";
     }
 
     public void handleInput(InputHandler input, Camera camera, double deltaTime) {
@@ -155,22 +83,32 @@ public class Level implements Updatable, Renderable {
             return;
         }
 
-        // 1. Update player physics
+        // 1. Update Player Physics and Tile Collisions
         player.update(deltaTime);
         player.updatePhysicsAndCollisions(this, deltaTime);
 
-        // Check if player fell out of bounds
+        // Instant death if fallen out of world bounds
         if (player.getY() > height + 100) {
-            player.takeDamage(100);
+            player.takeDamage(99999);
             gameOver = true;
             return;
         }
 
-        // 2. Update enemies
+        // Check if Player touches Spikes (Instant Death!)
+        for (Tile tile : tiles) {
+            if (tile.isActive() && tile.isHazard() && player.getHitbox().intersects(tile.getHitbox())) {
+                player.takeDamage(99999); // Instant Kill!
+                ParticleSystem.getInstance().spawnSparks(player.getCenterX(), player.getCenterY(), Color.RED);
+                gameOver = true;
+                return;
+            }
+        }
+
+        // 2. Update Enemies (AI, Gravity, Physics, and Spike Collisions)
         Iterator<Enemy> enemyIt = enemies.iterator();
         while (enemyIt.hasNext()) {
             Enemy enemy = enemyIt.next();
-            if (enemy.isDead()) {
+            if (enemy.isDead() || !enemy.isActive()) {
                 enemy.dropLoot(this);
                 player.addKill();
                 enemyIt.remove();
@@ -183,7 +121,27 @@ public class Level implements Updatable, Renderable {
             }
         }
 
-        // 3. Update projectiles and projectile collisions
+        // 3. Update Items (Gravity, Physics, and Spike Collisions)
+        Iterator<Item> itemIt = items.iterator();
+        while (itemIt.hasNext()) {
+            Item item = itemIt.next();
+            item.update(deltaTime);
+            item.updatePhysicsAndCollisions(tiles, deltaTime);
+
+            if (!item.isActive()) {
+                itemIt.remove();
+                continue;
+            }
+
+            // Check if player collects item
+            if (player.collidesWith(item)) {
+                if (item.onPickup(player)) {
+                    itemIt.remove();
+                }
+            }
+        }
+
+        // 4. Update Projectiles & Check Collisions
         Iterator<Projectile> projIt = projectiles.iterator();
         while (projIt.hasNext()) {
             Projectile p = projIt.next();
@@ -194,12 +152,21 @@ public class Level implements Updatable, Renderable {
                 continue;
             }
 
-            // Check collision with solid tiles
+            // A. Projectile vs Tiles
             boolean hitTile = false;
             for (Tile tile : tiles) {
+                if (!tile.isActive()) continue;
+
                 if (tile.isSolid() && p.collidesWith(tile)) {
                     hitTile = true;
-                    ParticleSystem.getInstance().spawnSparks(p.getX(), p.getY(), Color.YELLOW);
+
+                    // If it's a PlayerBullet hitting a Breakable Block, damage and potentially destroy it!
+                    if (p instanceof PlayerBullet && tile.isBreakable()) {
+                        tile.takeDamage(p.getDamage());
+                        SoundManager.getInstance().playHit();
+                    } else {
+                        ParticleSystem.getInstance().spawnSparks(p.getX(), p.getY(), Color.YELLOW);
+                    }
                     break;
                 }
             }
@@ -209,7 +176,7 @@ public class Level implements Updatable, Renderable {
                 continue;
             }
 
-            // Check PlayerBullet vs Enemies
+            // B. PlayerBullet vs Enemies
             if (p instanceof PlayerBullet) {
                 boolean hitEnemy = false;
                 for (Enemy enemy : enemies) {
@@ -228,7 +195,7 @@ public class Level implements Updatable, Renderable {
                 }
             }
 
-            // Check EnemyBullet vs Player
+            // C. EnemyBullet vs Player
             if (p instanceof EnemyBullet) {
                 if (!player.isDead() && p.collidesWith(player)) {
                     player.takeDamage(p.getDamage());
@@ -241,31 +208,28 @@ public class Level implements Updatable, Renderable {
             }
         }
 
-        // 4. Update and check item pickups
-        Iterator<Item> itemIt = items.iterator();
-        while (itemIt.hasNext()) {
-            Item item = itemIt.next();
-            item.update(deltaTime);
-            if (player.collidesWith(item)) {
-                if (item.onPickup(player)) {
-                    itemIt.remove();
-                }
-            }
-        }
+        // Remove destroyed tiles
+        tiles.removeIf(t -> !t.isActive());
 
-        // 5. Check hazard tiles (spikes) vs Player
+        // 5. Check Level Exit / Stage Progression
         for (Tile tile : tiles) {
-            if (tile.isHazard() && player.collidesWith(tile)) {
-                player.takeDamage(20);
-                player.getVelocity().setY(-350); // Bounce off spikes
-            }
             if (tile.getType() == Tile.TileType.EXIT && player.collidesWith(tile)) {
-                missionComplete = true;
-                SoundManager.getInstance().playVictory();
+                // Check if next stage exists
+                int nextStage = currentStage + 1;
+                File nextFile = DrawioLevelLoader.findStageFile(nextStage);
+                if (nextFile != null && nextFile.exists()) {
+                    SoundManager.getInstance().playVictory();
+                    loadStage(nextStage);
+                } else {
+                    // All stages completed!
+                    missionComplete = true;
+                    SoundManager.getInstance().playVictory();
+                }
+                break;
             }
         }
 
-        // 6. Update particles
+        // 6. Update Particle System
         ParticleSystem.getInstance().update(deltaTime);
     }
 
@@ -273,6 +237,7 @@ public class Level implements Updatable, Renderable {
     public void render(Graphics2D g, double offsetX, double offsetY) {
         // Render tiles
         for (Tile tile : tiles) {
+            if (!tile.isActive()) continue;
             // Cull offscreen tiles
             if (tile.getX() + tile.getWidth() >= offsetX && tile.getX() <= offsetX + Constants.SCREEN_WIDTH &&
                 tile.getY() + tile.getHeight() >= offsetY && tile.getY() <= offsetY + Constants.SCREEN_HEIGHT) {
@@ -282,12 +247,16 @@ public class Level implements Updatable, Renderable {
 
         // Render items
         for (Item item : items) {
-            item.render(g, offsetX, offsetY);
+            if (item.isActive()) {
+                item.render(g, offsetX, offsetY);
+            }
         }
 
         // Render enemies
         for (Enemy enemy : enemies) {
-            enemy.render(g, offsetX, offsetY);
+            if (enemy.isActive()) {
+                enemy.render(g, offsetX, offsetY);
+            }
         }
 
         // Render player
@@ -295,7 +264,9 @@ public class Level implements Updatable, Renderable {
 
         // Render projectiles
         for (Projectile p : projectiles) {
-            p.render(g, offsetX, offsetY);
+            if (p.isActive()) {
+                p.render(g, offsetX, offsetY);
+            }
         }
 
         // Render particles
@@ -303,7 +274,7 @@ public class Level implements Updatable, Renderable {
     }
 
     public void reset() {
-        buildLevelLayout();
+        loadStage(currentStage);
     }
 
     public void addProjectile(Projectile p) {
@@ -317,8 +288,10 @@ public class Level implements Updatable, Renderable {
     public Player getPlayer() { return player; }
     public List<Tile> getTiles() { return tiles; }
     public List<Enemy> getEnemies() { return enemies; }
+    public List<Item> getItems() { return items; }
     public double getWidth() { return width; }
     public double getHeight() { return height; }
     public boolean isMissionComplete() { return missionComplete; }
     public boolean isGameOver() { return gameOver; }
+    public int getCurrentStage() { return currentStage; }
 }

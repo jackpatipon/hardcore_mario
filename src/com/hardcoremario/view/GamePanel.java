@@ -59,6 +59,7 @@ public class GamePanel extends JPanel {
         if (!paused) {
             level.handleInput(inputHandler, camera, deltaTime);
             level.update(deltaTime);
+            camera.setLevelBounds(level.getWidth(), level.getHeight());
             camera.update(level.getPlayer().getCenterX(), level.getPlayer().getCenterY(), deltaTime);
         }
     }

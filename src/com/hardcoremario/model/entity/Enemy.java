@@ -29,13 +29,12 @@ public abstract class Enemy extends LivingEntity {
     }
 
     /**
-     * Drops either a HealthPack or an AmmoPack with probability upon death.
+     * Drops loot upon death:
+     * - Only drops AmmoPack (never drops HealthPack)
+     * - Only drops if the player's reserve ammo is less than 10.
      */
     public void dropLoot(Level level) {
-        double roll = random.nextDouble();
-        if (roll < 0.35) {
-            level.addItem(new HealthPack(getCenterX() - 16, getY() + height - 32));
-        } else if (roll < 0.70) {
+        if (level.getPlayer() != null && level.getPlayer().getReserveAmmo() < 10) {
             level.addItem(new AmmoPack(getCenterX() - 16, getY() + height - 32));
         }
     }

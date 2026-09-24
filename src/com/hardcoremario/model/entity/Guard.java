@@ -14,7 +14,7 @@ import java.awt.image.BufferedImage;
 
 /**
  * Guard soldier representing the Apex Syndicate enemy from the Storyboard.
- * Stands on platforms or ground, patrols, aims, and fires bullets at Mario.
+ * Responds to gravity, falls if blocks underneath are destroyed, and dies instantly upon touching spikes.
  */
 public class Guard extends Enemy {
     private double patrolStartX;
@@ -48,22 +48,26 @@ public class Guard extends Enemy {
             // Shoot at player
             if (attackTimer <= 0) {
                 shootAt(player.getCenterX(), player.getCenterY(), level);
-                attackTimer = attackCooldown + (random.nextDouble() * 0.4 - 0.2); // Random jitter
+                attackTimer = attackCooldown + (random.nextDouble() * 0.4 - 0.2);
             }
         } else {
-            // Idle patrol back and forth
-            if (movingRight) {
-                velocity.setX(Constants.GUARD_MOVE_SPEED);
-                facingRight = true;
-                if (getX() >= patrolStartX + patrolDistance) {
-                    movingRight = false;
+            // Idle patrol back and forth only if patrolDistance > 0 and grounded
+            if (patrolDistance > 0 && isGrounded) {
+                if (movingRight) {
+                    velocity.setX(Constants.GUARD_MOVE_SPEED);
+                    facingRight = true;
+                    if (getX() >= patrolStartX + patrolDistance) {
+                        movingRight = false;
+                    }
+                } else {
+                    velocity.setX(-Constants.GUARD_MOVE_SPEED);
+                    facingRight = false;
+                    if (getX() <= patrolStartX) {
+                        movingRight = true;
+                    }
                 }
-            } else {
-                velocity.setX(-Constants.GUARD_MOVE_SPEED);
-                facingRight = false;
-                if (getX() <= patrolStartX) {
-                    movingRight = true;
-                }
+            } else if (patrolDistance == 0) {
+                velocity.setX(0);
             }
         }
     }
@@ -92,7 +96,7 @@ public class Guard extends Enemy {
         if (attackTimer > 0) attackTimer -= deltaTime;
         if (invulnerableTimer > 0) invulnerableTimer -= deltaTime;
 
-        // Gravity
+        // Gravity: always pull down so enemy falls if block below is destroyed!
         velocity.setY(Math.min(velocity.getY() + Constants.GRAVITY * deltaTime, Constants.MAX_FALL_SPEED));
     }
 
@@ -110,7 +114,7 @@ public class Guard extends Enemy {
     private void checkTileCollisionsX(Level level) {
         Rectangle2D.Double hb = getHitbox();
         for (Tile tile : level.getTiles()) {
-            if (!tile.isSolid()) continue;
+            if (!tile.isActive() || !tile.isSolid()) continue;
             if (hb.intersects(tile.getHitbox())) {
                 if (velocity.getX() > 0) {
                     position.setX(tile.getX() - width);
@@ -128,8 +132,17 @@ public class Guard extends Enemy {
     private void checkTileCollisionsY(Level level) {
         Rectangle2D.Double hb = getHitbox();
         for (Tile tile : level.getTiles()) {
-            if (!tile.isSolid()) continue;
-            if (hb.intersects(tile.getHitbox())) {
+            if (!tile.isActive()) continue;
+
+            // Instant kill if enemy touches spikes!
+            if (tile.isHazard() && hb.intersects(tile.getHitbox())) {
+                takeDamage(99999);
+                ParticleSystem.getInstance().spawnSparks(getCenterX(), getCenterY(), Color.RED);
+                return;
+            }
+
+            // Solid tile collision (landing on block)
+            if (tile.isSolid() && hb.intersects(tile.getHitbox())) {
                 if (velocity.getY() > 0) {
                     position.setY(tile.getY() - height);
                     velocity.setY(0);

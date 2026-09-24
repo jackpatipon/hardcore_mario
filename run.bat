@@ -30,10 +30,12 @@ pause
 exit /b 1
 
 :CHECK_BIN
-if not exist "bin\com\hardcoremario\Main.class" (
-    echo [INFO] Binaries not found. Compiling first...
-    call compile.bat
-    if %errorlevel% neq 0 exit /b %errorlevel%
+echo [INFO] Compiling latest game code...
+call compile.bat
+if %errorlevel% neq 0 (
+    echo [ERROR] Compilation failed.
+    pause
+    exit /b %errorlevel%
 )
 
 echo Running game...

@@ -49,27 +49,32 @@ public class Player extends LivingEntity {
         // Turn facing direction based on mouse position relative to player center
         facingRight = mouseWorldX >= getCenterX();
 
-        // 2. Crouch handling
+        // 2. Crouch handling (lowers head hitbox downwards towards feet)
         boolean wantsCrouch = input.isCrouch();
         if (wantsCrouch != crouching) {
             crouching = wantsCrouch;
+            int oldHeight = this.height;
             this.height = crouching ? Constants.PLAYER_CROUCH_HEIGHT : Constants.PLAYER_HEIGHT;
+            // Shift Y downwards so the head ducks down while feet stay grounded / aligned
+            position.setY(position.getY() + (oldHeight - this.height));
         }
 
         // 3. Horizontal movement
         double targetVx = 0.0;
-        if (!crouching) {
-            if (input.isMoveLeft()) targetVx -= Constants.PLAYER_MOVE_SPEED;
-            if (input.isMoveRight()) targetVx += Constants.PLAYER_MOVE_SPEED;
-        } else {
-            // Slower crawl speed while crouching
-            if (input.isMoveLeft()) targetVx -= Constants.PLAYER_MOVE_SPEED * 0.45;
-            if (input.isMoveRight()) targetVx += Constants.PLAYER_MOVE_SPEED * 0.45;
-        }
+        // In mid-air, maintain full forward jump speed even while tucked! Only slow down when crawling on solid ground.
+        double moveSpeed = (!isGrounded || !crouching) ? Constants.PLAYER_MOVE_SPEED : Constants.PLAYER_MOVE_SPEED * 0.45;
+        if (input.isMoveLeft()) targetVx -= moveSpeed;
+        if (input.isMoveRight()) targetVx += moveSpeed;
         velocity.setX(targetVx);
 
         // 4. Jump handling
-        if (input.isJump() && isGrounded && !crouching) {
+        if (input.isJump() && isGrounded) {
+            if (crouching) {
+                // If crouching on ground and player presses jump, uncrouch and jump
+                crouching = false;
+                position.setY(position.getY() - (Constants.PLAYER_HEIGHT - this.height));
+                this.height = Constants.PLAYER_HEIGHT;
+            }
             velocity.setY(Constants.PLAYER_JUMP_SPEED);
             isGrounded = false;
             SoundManager.getInstance().playJump();
