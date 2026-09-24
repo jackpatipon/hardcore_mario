@@ -32,9 +32,9 @@ public class DrawioLevelLoader {
 
     public static File findStageFile(int stage) {
         String[] possiblePaths = {
-            "hardcore_mario_stage" + stage + ".drawio.xml",
             "assets/levels/hardcore_mario_stage" + stage + ".drawio.xml",
             "assets/levels/stage" + stage + ".drawio.xml",
+            "hardcore_mario_stage" + stage + ".drawio.xml",
             "stage" + stage + ".drawio.xml",
             "hardcore_mario_stage" + stage + ".xml"
         };
@@ -55,8 +55,13 @@ public class DrawioLevelLoader {
             if (subFile.exists()) {
                 file = subFile;
             } else {
-                System.err.println("Warning: Level XML file not found at " + xmlFilePath + ". Using embedded layout.");
-                return buildHardcodedStage1Fallback();
+                File subFile2 = new File("assets/levels/" + file.getName());
+                if (subFile2.exists()) {
+                    file = subFile2;
+                } else {
+                    System.err.println("Warning: Level XML file not found at " + xmlFilePath + ". Using embedded layout.");
+                    return buildHardcodedStage1Fallback();
+                }
             }
         }
 

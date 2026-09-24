@@ -54,7 +54,8 @@ public class Level implements Updatable, Renderable {
         missionComplete = false;
         gameOver = false;
 
-        String stageFile = "hardcore_mario_stage" + stage + ".drawio.xml";
+        File stageF = DrawioLevelLoader.findStageFile(stage);
+        String stageFile = (stageF != null) ? stageF.getPath() : "assets/levels/hardcore_mario_stage" + stage + ".drawio.xml";
         DrawioLevelLoader.LevelData data = DrawioLevelLoader.loadLevel(stageFile);
 
         this.width = data.width;
