@@ -1,5 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
+cd /d "%~dp0"
 
 echo ========================================================
 echo   Compiling Hardcore Mario (มาริโอ้เถื่อน)
@@ -37,7 +38,7 @@ if not exist bin mkdir bin
 :: Find all java files and compile
 dir /s /b src\*.java > sources.txt
 if exist tools dir /s /b tools\*.java >> sources.txt
-"%JAVAC_CMD%" --release 8 -encoding UTF-8 -cp "lib/*;bin" -d bin @sources.txt
+"%JAVAC_CMD%" -encoding UTF-8 -cp "lib/*;bin" -d bin @sources.txt
 set COMPILE_STATUS=%errorlevel%
 del sources.txt
 
