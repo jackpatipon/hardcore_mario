@@ -17,3 +17,9 @@ Thumbs.db
 # Cached audio decoding files
 *.cached.wav
 
+# Release builds and archives (distribute via GitHub Releases)
+release/
+build_tmp/
+*.zip
+HardcoreMario.jar
+
