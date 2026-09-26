@@ -68,8 +68,15 @@ public class SoundManager {
 
     private void loadSFX(String key, String filePath, int poolSize) {
         File file = new File(filePath);
+        if (!file.exists()) {
+            if (filePath.endsWith(".wav")) {
+                File mp3File = new File(filePath.substring(0, filePath.length() - 4) + ".mp3");
+                if (mp3File.exists()) file = mp3File;
+            }
+        }
         if (file.exists()) {
             try {
+                file = ensurePcmWav(file);
                 ClipPool pool = new ClipPool(file, poolSize);
                 sfxPools.put(key, pool);
             } catch (Exception e) {
@@ -169,8 +176,11 @@ public class SoundManager {
 
         String[] candidates = {
             "assets/audio/music/bgm_stage" + stage + ".wav",
+            "assets/audio/music/bgm_stage" + stage + ".mp3",
             "assets/audio/music/bgm_stage.wav",
-            "assets/audio/music/bgm_main.wav"
+            "assets/audio/music/bgm_stage.mp3",
+            "assets/audio/music/bgm_main.wav",
+            "assets/audio/music/bgm_main.mp3"
         };
 
         for (String path : candidates) {
@@ -196,7 +206,15 @@ public class SoundManager {
         stopMusic();
 
         File file = new File(path);
+        if (!file.exists()) {
+            if (path.endsWith(".wav")) {
+                File mp3File = new File(path.substring(0, path.length() - 4) + ".mp3");
+                if (mp3File.exists()) file = mp3File;
+            }
+        }
         if (!file.exists()) return;
+
+        file = ensurePcmWav(file);
 
         try {
             AudioInputStream in = getPcmStream(file);
@@ -323,6 +341,40 @@ public class SoundManager {
             false
         );
         return AudioSystem.getAudioInputStream(decodedFormat, in);
+    }
+
+    private static boolean isMp3(File file) {
+        if (file.getName().toLowerCase().endsWith(".mp3")) return true;
+        try (java.io.FileInputStream fis = new java.io.FileInputStream(file)) {
+            byte[] header = new byte[3];
+            int read = fis.read(header);
+            if (read >= 3) {
+                // "ID3" tag in MP3
+                if (header[0] == 'I' && header[1] == 'D' && header[2] == '3') return true;
+                // MPEG Frame sync 0xFF 0xFB, 0xFA, 0xF3, etc.
+                if ((header[0] & 0xFF) == 0xFF && (header[1] & 0xE0) == 0xE0) return true;
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
+    private static File ensurePcmWav(File file) {
+        if (!isMp3(file)) return file;
+
+        // Auto-transcode MP3 to cached WAV
+        File cachedWav = new File(file.getParentFile(), "." + file.getName() + ".cached.wav");
+        if (!cachedWav.exists() || cachedWav.lastModified() < file.lastModified()) {
+            try {
+                System.out.println("[SoundManager] Auto-decoding MP3 stream in: " + file.getName() + "...");
+                javazoom.jl.converter.Converter conv = new javazoom.jl.converter.Converter();
+                conv.convert(file.getAbsolutePath(), cachedWav.getAbsolutePath());
+                System.out.println("[SoundManager] Decoded successfully -> " + cachedWav.getName());
+            } catch (Throwable e) {
+                System.err.println("[SoundManager] MP3 decoding failed: " + e.getMessage());
+                return file;
+            }
+        }
+        return cachedWav;
     }
 
     // ==========================================

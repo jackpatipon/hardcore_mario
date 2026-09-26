@@ -13,3 +13,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.iml
+
+# Cached audio decoding files
+*.cached.wav
+

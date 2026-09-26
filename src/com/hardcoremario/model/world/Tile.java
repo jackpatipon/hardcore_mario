@@ -194,18 +194,10 @@ public class Tile extends Entity {
             return;
         }
 
-        // Ground / Large Floor Platform
+        // Ground / Large Floor Platform (Single unified solid color piece)
         if (type == TileType.GROUND) {
-            if (customColor != null) {
-                renderProceduralGround(g, drawX, drawY, width, height, customColor);
-                return;
-            }
-            BufferedImage img = AssetManager.getInstance().getImage(type.getAssetKey());
-            if (img != null) {
-                renderTiled(g, img, drawX, drawY, width, height, false);
-                return;
-            }
-            renderProceduralGround(g, drawX, drawY, width, height, new Color(24, 26, 32));
+            Color base = (customColor != null) ? customColor : new Color(24, 26, 32);
+            renderSolidGround(g, drawX, drawY, width, height, base);
             return;
         }
 
@@ -221,34 +213,9 @@ public class Tile extends Entity {
         }
     }
 
-    private void renderProceduralGround(Graphics2D g, int drawX, int drawY, int width, int height, Color base) {
+    private void renderSolidGround(Graphics2D g, int drawX, int drawY, int width, int height, Color base) {
         g.setColor(base);
         g.fillRect(drawX, drawY, width, height);
-
-        // Sleek metal walking trim on top edge
-        g.setColor(new Color(80, 85, 100));
-        g.fillRect(drawX, drawY, width, 4);
-        g.setColor(new Color(130, 140, 160));
-        g.drawLine(drawX, drawY, drawX + width, drawY);
-
-        // Dark accent seam below the trim
-        g.setColor(new Color(12, 14, 18));
-        g.drawLine(drawX, drawY + 4, drawX + width, drawY + 4);
-
-        // Industrial floor panel seams and rivet accents every 80px
-        int panelW = 80;
-        for (int px = 0; px < width; px += panelW) {
-            int sx = drawX + px;
-            g.setColor(new Color(15, 17, 22));
-            g.drawLine(sx, drawY + 4, sx, drawY + height);
-            g.setColor(new Color(50, 55, 65));
-            g.drawLine(sx + 1, drawY + 4, sx + 1, drawY + height);
-
-            // Small metal rivets near top seam
-            g.setColor(new Color(90, 95, 110));
-            g.fillOval(sx + 6, drawY + 8, 3, 3);
-            g.fillOval(sx + panelW - 9, drawY + 8, 3, 3);
-        }
     }
 
     private void renderTiled(Graphics2D g, BufferedImage img, int drawX, int drawY, int width, int height, boolean flipV) {

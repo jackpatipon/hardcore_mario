@@ -39,4 +39,4 @@ if %errorlevel% neq 0 (
 )
 
 echo Running game...
-"%JAVA_CMD%" -cp bin com.hardcoremario.Main
+"%JAVA_CMD%" -cp "bin;lib/*" com.hardcoremario.Main
