@@ -1,15 +1,27 @@
 @echo off
 setlocal enabledelayedexpansion
+cd /d "%~dp0"
 
 echo ========================================================
 echo   Building Release Package for Hardcore Mario
 echo ========================================================
 
-:: 1. Look for jar and javac
+:: 1. Look for jar in PATH
 set "JAR_CMD=jar"
 where jar >nul 2>nul
 if %errorlevel% equ 0 goto COMPILE
 
+:: 2. Look for System JDK paths
+if exist "C:\Program Files\Java\jdk-27\bin\jar.exe" (
+    set "JAR_CMD=C:\Program Files\Java\jdk-27\bin\jar.exe"
+    goto COMPILE
+)
+if exist "C:\Program Files\Java\latest\bin\jar.exe" (
+    set "JAR_CMD=C:\Program Files\Java\latest\bin\jar.exe"
+    goto COMPILE
+)
+
+:: 3. Look for JAVA_HOME
 if defined JAVA_HOME (
     if exist "%JAVA_HOME%\bin\jar.exe" (
         set "JAR_CMD=%JAVA_HOME%\bin\jar.exe"
@@ -17,6 +29,7 @@ if defined JAVA_HOME (
     )
 )
 
+:: 4. Look for VS Code Embedded JDK
 set "VSCODE_JAR=C:\Users\patip\.vscode\extensions\redhat.java-1.56.0-win32-x64\jre\21.0.12.1-win32-x86_64\bin\jar.exe"
 if exist "%VSCODE_JAR%" (
     set "JAR_CMD=%VSCODE_JAR%"
@@ -72,32 +85,16 @@ echo [3/4] Preparing Release Distribution...
 if exist "release\assets" rmdir /s /q "release\assets"
 xcopy /s /e /q "assets" "release\assets\" >nul
 
-:: Create Play instruction
-echo ======================================================== > "release\HOW_TO_PLAY.txt"
-echo   Hardcore Mario (มาริโอ้เถื่อน) - Standalone Edition >> "release\HOW_TO_PLAY.txt"
-echo ======================================================== >> "release\HOW_TO_PLAY.txt"
-echo. >> "release\HOW_TO_PLAY.txt"
-echo [วิธีเล่น] >> "release\HOW_TO_PLAY.txt"
-echo 1. ดับเบิลคลิกที่ไฟล์ 'HardcoreMario.jar' เพื่อเริ่มเกมได้ทันที >> "release\HOW_TO_PLAY.txt"
-echo    (เครื่องต้องมี Java Runtime / JRE 8 ขึ้นไป) >> "release\HOW_TO_PLAY.txt"
-echo. >> "release\HOW_TO_PLAY.txt"
-echo 2. ปุ่มควบคุมในเกม: >> "release\HOW_TO_PLAY.txt"
-echo    - W, A, S, D  : เดิน / หมอบคลาน >> "release\HOW_TO_PLAY.txt"
-echo    - SPACE       : กระโดด >> "release\HOW_TO_PLAY.txt"
-echo    - เมาส์       : เล็งรอบทิศทาง 360 องศา >> "release\HOW_TO_PLAY.txt"
-echo    - คลิกซ้าย    : ยิงปืน >> "release\HOW_TO_PLAY.txt"
-echo    - R           : รีโหลดกระสุน >> "release\HOW_TO_PLAY.txt"
-echo    - C           : สลับสีกระสุน (มีโหมดสำหรับคนตาบอดสี) >> "release\HOW_TO_PLAY.txt"
-echo    - ESC / P     : เมนูหยุดชั่วคราว (Pause) >> "release\HOW_TO_PLAY.txt"
-echo. >> "release\HOW_TO_PLAY.txt"
-echo ผู้พัฒนา: ปฏิพล จันทร์บุญ (6804062612102 ตอน 3) >> "release\HOW_TO_PLAY.txt"
+if exist "HOW_TO_PLAY.txt" copy /y "HOW_TO_PLAY.txt" "release\HOW_TO_PLAY.txt" >nul
 
 echo [4/4] Creating ZIP package for GitHub Release...
-powershell -Command "if (Test-Path 'HardcoreMario_v1.0.zip') { Remove-Item 'HardcoreMario_v1.0.zip' }; Compress-Archive -Path 'release\*' -DestinationPath 'HardcoreMario_v1.0.zip' -Force"
+set "PS_CMD=powershell"
+if exist "%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" set "PS_CMD=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
+"%PS_CMD%" -NoProfile -Command "if (Test-Path 'HardcoreMario_v1.0.zip') { Remove-Item 'HardcoreMario_v1.0.zip' }; Compress-Archive -Path 'release\*' -DestinationPath 'HardcoreMario_v1.0.zip' -Force"
 
 echo ========================================================
 echo [SUCCESS] Build Complete!
 echo.
-echo 1. เล่นบนเครื่องนี้ได้ทันที: ดับเบิลคลิกที่ 'HardcoreMario.jar'
-echo 2. ไฟล์สำหรับอัปโหลดขึ้น GitHub Release: 'HardcoreMario_v1.0.zip'
+echo 1. Local play: Double-click 'HardcoreMario.jar' or 'run.bat'
+echo 2. For GitHub Release: 'HardcoreMario_v1.0.zip'
 echo ========================================================

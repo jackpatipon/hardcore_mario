@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 echo ========================================================
-echo   Compiling Hardcore Mario (มาริโอ้เถื่อน)
+echo   Compiling Hardcore Mario
 echo ========================================================
 
 :: 1. Look for javac in PATH
@@ -11,7 +11,17 @@ set JAVAC_CMD=javac
 where javac >nul 2>nul
 if %errorlevel% equ 0 goto COMPILE
 
-:: 2. Look for JAVA_HOME
+:: 2. Look for JDK in standard Program Files
+if exist "C:\Program Files\Java\jdk-27\bin\javac.exe" (
+    set "JAVAC_CMD=C:\Program Files\Java\jdk-27\bin\javac.exe"
+    goto COMPILE
+)
+if exist "C:\Program Files\Java\latest\bin\javac.exe" (
+    set "JAVAC_CMD=C:\Program Files\Java\latest\bin\javac.exe"
+    goto COMPILE
+)
+
+:: 3. Look for JAVA_HOME
 if defined JAVA_HOME (
     if exist "%JAVA_HOME%\bin\javac.exe" (
         set "JAVAC_CMD=%JAVA_HOME%\bin\javac.exe"
@@ -19,7 +29,7 @@ if defined JAVA_HOME (
     )
 )
 
-:: 3. Look for VS Code Embedded JDK
+:: 4. Look for VS Code Embedded JDK
 set "VSCODE_JDK=C:\Users\patip\.vscode\extensions\redhat.java-1.56.0-win32-x64\jre\21.0.12.1-win32-x86_64\bin\javac.exe"
 if exist "%VSCODE_JDK%" (
     set "JAVAC_CMD=%VSCODE_JDK%"
@@ -40,10 +50,10 @@ dir /s /b src\*.java > sources.txt
 if exist tools dir /s /b tools\*.java >> sources.txt
 "%JAVAC_CMD%" -encoding UTF-8 -cp "lib/*;bin" -d bin @sources.txt
 set COMPILE_STATUS=%errorlevel%
-del sources.txt
+if exist sources.txt del sources.txt
 
 if %COMPILE_STATUS% equ 0 (
-    echo [SUCCESS] Compilation completed successfully! Output in 'bin/' folder.
+    echo [SUCCESS] Compilation completed successfully.
 ) else (
     echo [ERROR] Compilation failed with error code %COMPILE_STATUS%.
     exit /b %COMPILE_STATUS%
