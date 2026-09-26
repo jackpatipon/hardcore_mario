@@ -23,6 +23,11 @@ public class Guard extends Enemy {
     private boolean alerted = false;
     private double aimAngle = 0.0;
 
+    // Walk animation: 2-frame walking cycle (alternates frames 1 and 2 while moving, locks to frame 1 when idle)
+    private double walkAnimTimer = 0.0;
+    private int currentFrame = 1;
+    public static final double WALK_FRAME_DURATION = 0.16;
+
     public Guard(double x, double y, double patrolDistance) {
         super(x, y, Constants.PLAYER_WIDTH, Constants.PLAYER_HEIGHT, Constants.GUARD_MAX_HP, Constants.GUARD_SIGHT_RANGE, Constants.GUARD_FIRE_COOLDOWN);
         this.patrolStartX = x;
@@ -95,6 +100,16 @@ public class Guard extends Enemy {
     public void update(double deltaTime) {
         if (attackTimer > 0) attackTimer -= deltaTime;
         if (invulnerableTimer > 0) invulnerableTimer -= deltaTime;
+
+        // Walk animation: alternates frames 1 and 2 while moving, locks to frame 1 when idle
+        boolean isMoving = Math.abs(velocity.getX()) > 5.0;
+        if (isMoving) {
+            walkAnimTimer += deltaTime;
+            currentFrame = ((int) (walkAnimTimer / WALK_FRAME_DURATION) % 2) + 1;
+        } else {
+            walkAnimTimer = 0.0;
+            currentFrame = 1;
+        }
 
         // Gravity: always pull down so enemy falls if block below is destroyed!
         velocity.setY(Math.min(velocity.getY() + Constants.GRAVITY * deltaTime, Constants.MAX_FALL_SPEED));
@@ -171,9 +186,19 @@ public class Guard extends Enemy {
 
         if (alerted) {
             String dirKey = am.get8DirectionKey(aimAngle);
-            sprite = am.getImage("guard_aim_" + dirKey);
+            sprite = am.getDirectionalSprite("guard", dirKey, currentFrame);
         } else {
-            sprite = am.getImage(facingRight ? "guard_idle_right" : "guard_idle_left");
+            String dirKey = facingRight ? "e" : "w";
+            String idleKey = facingRight ? "guard_idle_right" : "guard_idle_left";
+
+            // If user adds animated guard frames in the future (e.g. guard_idle_right_1 or guard_aim_e_1), use them!
+            if (am.hasImage(idleKey + "_" + currentFrame)) {
+                sprite = am.getImage(idleKey + "_" + currentFrame);
+            } else if (am.hasImage("guard_aim_" + dirKey + "_" + currentFrame)) {
+                sprite = am.getDirectionalSprite("guard", dirKey, currentFrame);
+            } else {
+                sprite = am.getImage(idleKey);
+            }
         }
 
         if (sprite != null) {
@@ -194,4 +219,8 @@ public class Guard extends Enemy {
         g.setColor(Color.RED);
         g.fillRect(barX, barY, (int) (barW * hpPercent), barH);
     }
+
+    public int getCurrentFrame() { return currentFrame; }
+    public double getWalkAnimTimer() { return walkAnimTimer; }
+    public boolean isMoving() { return Math.abs(velocity.getX()) > 5.0; }
 }

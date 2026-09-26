@@ -173,6 +173,87 @@ public class VerifyGame {
                 }
             }
 
+            // Test Player & Guard Walking Animation and Sprite Resolution
+            {
+                com.hardcoremario.core.AssetManager am = com.hardcoremario.core.AssetManager.getInstance();
+                String[] dirs = {"e", "ne", "n", "nw", "w", "sw", "s", "se"};
+
+                // Verify player sprites for all 8 directions
+                for (String dir : dirs) {
+                    BufferedImage f1 = am.getDirectionalSprite("player", dir, 1);
+                    BufferedImage f2 = am.getDirectionalSprite("player", dir, 2);
+                    if (f1 == null || f2 == null) {
+                        throw new RuntimeException("ERROR: Player directional sprite missing for direction: " + dir);
+                    }
+                }
+
+                // Verify guard sprites fallback for all 8 directions
+                for (String dir : dirs) {
+                    BufferedImage f1 = am.getDirectionalSprite("guard", dir, 1);
+                    BufferedImage f2 = am.getDirectionalSprite("guard", dir, 2);
+                    if (f1 == null || f2 == null) {
+                        throw new RuntimeException("ERROR: Guard directional sprite missing for direction: " + dir);
+                    }
+                }
+
+                // Verify Player walk cycle logic
+                com.hardcoremario.model.entity.Player testPlayer = new com.hardcoremario.model.entity.Player(100, 100);
+                if (testPlayer.getCurrentFrame() != 1) {
+                    throw new RuntimeException("ERROR: Player should start at idle frame 1, got: " + testPlayer.getCurrentFrame());
+                }
+
+                // Player idle update
+                testPlayer.getVelocity().setX(0);
+                testPlayer.update(0.1);
+                if (testPlayer.getCurrentFrame() != 1 || testPlayer.isMoving()) {
+                    throw new RuntimeException("ERROR: Player standing still should remain on frame 1!");
+                }
+
+                // Player walking update (step 1 -> frame 1)
+                testPlayer.getVelocity().setX(Constants.PLAYER_MOVE_SPEED);
+                testPlayer.update(0.05); // walkAnimTimer = 0.05 < 0.14
+                if (testPlayer.getCurrentFrame() != 1 || !testPlayer.isMoving()) {
+                    throw new RuntimeException("ERROR: Player should be moving on frame 1, got frame: " + testPlayer.getCurrentFrame());
+                }
+
+                // Player walking update (step 2 -> frame 2)
+                testPlayer.update(0.10); // walkAnimTimer = 0.15 > 0.14 -> frame 2
+                if (testPlayer.getCurrentFrame() != 2) {
+                    throw new RuntimeException("ERROR: Player should have switched to frame 2, got: " + testPlayer.getCurrentFrame());
+                }
+
+                // Player walking update (step 3 -> frame 1)
+                testPlayer.update(0.15); // walkAnimTimer = 0.30 > 0.28 -> frame 1
+                if (testPlayer.getCurrentFrame() != 1) {
+                    throw new RuntimeException("ERROR: Player should have looped back to frame 1, got: " + testPlayer.getCurrentFrame());
+                }
+
+                // Player stops moving -> resets to frame 1
+                testPlayer.getVelocity().setX(0);
+                testPlayer.update(0.016);
+                if (testPlayer.getCurrentFrame() != 1 || testPlayer.isMoving()) {
+                    throw new RuntimeException("ERROR: Player stopped moving but did not reset to frame 1!");
+                }
+
+                // Verify Guard walk cycle logic
+                com.hardcoremario.model.entity.Guard testGuard = new com.hardcoremario.model.entity.Guard(100, 100, 200);
+                if (testGuard.getCurrentFrame() != 1) {
+                    throw new RuntimeException("ERROR: Guard should start at frame 1!");
+                }
+                testGuard.getVelocity().setX(Constants.GUARD_MOVE_SPEED);
+                testGuard.update(0.20); // Past GUARD WALK_FRAME_DURATION of 0.16 -> frame 2
+                if (testGuard.getCurrentFrame() != 2) {
+                    throw new RuntimeException("ERROR: Guard walking should switch to frame 2!");
+                }
+                testGuard.getVelocity().setX(0);
+                testGuard.update(0.016);
+                if (testGuard.getCurrentFrame() != 1) {
+                    throw new RuntimeException("ERROR: Guard stopped should reset to frame 1!");
+                }
+
+                System.out.println("[VERIFIED] Player & Guard walking animation cycles and 8-directional sprites verified perfectly!");
+            }
+
             System.out.println("[VERIFIED] All stages load, simulate, and complete with ZERO errors!");
         } catch (Throwable t) {
             t.printStackTrace();

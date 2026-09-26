@@ -31,11 +31,9 @@ public class AssetManager {
     }
 
     private void preloadAllAssets() {
-        // Player 8-direction sprites
-        for (String dir : DIR_KEYS) {
-            loadImage("player_aim_" + dir, "assets/characters/player/8directions/aim_" + dir + ".png");
-            loadImage("guard_aim_" + dir, "assets/characters/guard/8directions/aim_" + dir + ".png");
-        }
+        // Dynamically load all 8-direction sprites (including animation frames _1, _2, _0, etc.)
+        loadDirectionalSprites("player", "assets/characters/player/8directions");
+        loadDirectionalSprites("guard", "assets/characters/guard/8directions");
 
         // Player states
         loadImage("player_idle", "assets/characters/player/idle.png");
@@ -71,6 +69,27 @@ public class AssetManager {
         loadImage("icon_ammo", "assets/ui/icon_ammo.png");
     }
 
+    private void loadDirectionalSprites(String entityType, String dirPath) {
+        File dir = new File(dirPath);
+        if (dir.exists() && dir.isDirectory()) {
+            File[] files = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".png"));
+            if (files != null) {
+                for (File file : files) {
+                    String name = file.getName();
+                    String baseName = name.substring(0, name.lastIndexOf('.'));
+                    try {
+                        BufferedImage img = ImageIO.read(file);
+                        if (img != null) {
+                            imageCache.put(entityType + "_" + baseName, img);
+                        }
+                    } catch (IOException e) {
+                        System.err.println("Warning: Could not read sprite " + file.getPath() + ": " + e.getMessage());
+                    }
+                }
+            }
+        }
+    }
+
     private void loadImage(String key, String path) {
         File file = new File(path);
         if (file.exists()) {
@@ -84,8 +103,10 @@ public class AssetManager {
                 System.err.println("Warning: Could not read asset " + path + ": " + e.getMessage());
             }
         }
-        // Fallback procedural image
-        imageCache.put(key, createFallbackImage(key));
+    }
+
+    public boolean hasImage(String key) {
+        return imageCache.containsKey(key);
     }
 
     public BufferedImage getImage(String key) {
@@ -95,6 +116,52 @@ public class AssetManager {
             imageCache.put(key, img);
         }
         return img;
+    }
+
+    /**
+     * Retrieves an 8-directional sprite for the given entity (e.g. "player", "guard"),
+     * direction (e.g. "e", "ne", "n"), and animation frame (1 or 2).
+     *
+     * Fallback resolution order:
+     * 1. <entity>_aim_<dir>_<frame>   (e.g. player_aim_e_1, player_aim_e_2)
+     * 2. <entity>_aim_<dir>_1         (default standing/idle frame)
+     * 3. <entity>_aim_<dir>_0         (e.g. aim_n_0, aim_s_0)
+     * 4. <entity>_aim_<dir>           (e.g. guard_aim_e without frame suffix)
+     * 5. <entity>_aim_<dir>_2         (if frame 1 missing)
+     * 6. Fallback procedural image
+     */
+    public BufferedImage getDirectionalSprite(String entityType, String dirKey, int frame) {
+        // 1. Exact frame (e.g. player_aim_e_1 or player_aim_e_2)
+        String key = entityType + "_aim_" + dirKey + "_" + frame;
+        BufferedImage img = imageCache.get(key);
+        if (img != null) return img;
+
+        // 2. Default standing frame 1
+        key = entityType + "_aim_" + dirKey + "_1";
+        img = imageCache.get(key);
+        if (img != null) return img;
+
+        // 3. Frame 0 (for north/south single-frame sprites like aim_n_0, aim_s_0)
+        key = entityType + "_aim_" + dirKey + "_0";
+        img = imageCache.get(key);
+        if (img != null) return img;
+
+        // 4. Base directional sprite (e.g. guard_aim_e)
+        key = entityType + "_aim_" + dirKey;
+        img = imageCache.get(key);
+        if (img != null) return img;
+
+        // 5. Try frame 2 if frame 1 was missing
+        key = entityType + "_aim_" + dirKey + "_2";
+        img = imageCache.get(key);
+        if (img != null) return img;
+
+        // 6. Return procedural fallback
+        return getImage(entityType + "_aim_" + dirKey);
+    }
+
+    public BufferedImage getDirectionalSprite(String entityType, String dirKey) {
+        return getDirectionalSprite(entityType, dirKey, 1);
     }
 
     /**

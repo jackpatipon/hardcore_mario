@@ -116,6 +116,11 @@ public class Tile extends Entity {
         int drawY = (int) (getY() - offsetY);
 
         if (type == TileType.EXIT) {
+            BufferedImage img = AssetManager.getInstance().getImage(type.getAssetKey());
+            if (img != null) {
+                renderTiled(g, img, drawX, drawY, width, height, false);
+                return;
+            }
             // Sci-Fi Exit Portal
             g.setColor(new Color(0, 255, 200, 100));
             g.fillRoundRect(drawX, drawY, width, height, 16, 16);
@@ -129,7 +134,12 @@ public class Tile extends Entity {
         }
 
         if (type == TileType.SPIKES) {
-            // Render sharp red/steel lethal spikes
+            BufferedImage img = AssetManager.getInstance().getImage(type.getAssetKey());
+            if (img != null) {
+                renderTiled(g, img, drawX, drawY, width, height, pointingDown);
+                return;
+            }
+            // Render sharp red/steel lethal spikes (fallback)
             int numSpikes = Math.max(1, width / 10);
             int spikeW = width / numSpikes;
             for (int i = 0; i < numSpikes; i++) {
@@ -137,10 +147,8 @@ public class Tile extends Entity {
                 int[] xs = {sx, sx + spikeW / 2, sx + spikeW};
                 int[] ys;
                 if (pointingDown) {
-                    // Ceiling spikes: base at ceiling (drawY), pointing DOWN towards drawY + height
                     ys = new int[]{drawY, drawY + height - 2, drawY};
                 } else {
-                    // Floor spikes: base at floor (drawY + height), pointing UP towards drawY + 2
                     ys = new int[]{drawY + height, drawY + 2, drawY + height};
                 }
                 g.setColor(new Color(230, 40, 40));
@@ -152,16 +160,17 @@ public class Tile extends Entity {
         }
 
         if (type == TileType.BREAKABLE_BLOCK) {
-            // Destructible block: Orange-bordered cracked brick matching draw.io (#FF8000)
+            BufferedImage img = AssetManager.getInstance().getImage(type.getAssetKey());
+            if (img != null) {
+                renderTiled(g, img, drawX, drawY, width, height, false);
+                return;
+            }
+            // Destructible block (fallback)
             g.setColor(new Color(210, 105, 30));
             g.fillRect(drawX, drawY, width, height);
-
-            // Brick pattern and cracks
             g.setColor(new Color(255, 140, 0));
             g.setStroke(new BasicStroke(2f));
             g.drawRect(drawX + 1, drawY + 1, width - 2, height - 2);
-
-            // Crack lines
             g.setColor(new Color(90, 40, 10));
             g.drawLine(drawX + 4, drawY + height / 2, drawX + width - 4, drawY + height / 2);
             g.drawLine(drawX + width / 2, drawY + 4, drawX + width / 2, drawY + height - 4);
@@ -169,8 +178,14 @@ public class Tile extends Entity {
         }
 
         if (type == TileType.SOLID_BLOCK) {
-            // Indestructible solid blue block matching draw.io (#0050ef)
-            g.setColor(new Color(0, 80, 239));
+            BufferedImage img = AssetManager.getInstance().getImage(type.getAssetKey());
+            if (img != null && customColor == null) {
+                renderTiled(g, img, drawX, drawY, width, height, false);
+                return;
+            }
+            // Indestructible solid blue block (fallback)
+            Color base = customColor != null ? customColor : new Color(0, 80, 239);
+            g.setColor(base);
             g.fillRect(drawX, drawY, width, height);
             g.setColor(new Color(120, 180, 255));
             g.drawRect(drawX, drawY, width - 1, height - 1);
@@ -181,59 +196,83 @@ public class Tile extends Entity {
 
         // Ground / Large Floor Platform
         if (type == TileType.GROUND) {
-            Color base = (customColor != null) ? customColor : new Color(24, 26, 32);
-            g.setColor(base);
-            g.fillRect(drawX, drawY, width, height);
-
-            // Sleek metal walking trim on top edge
-            g.setColor(new Color(80, 85, 100));
-            g.fillRect(drawX, drawY, width, 4);
-            g.setColor(new Color(130, 140, 160));
-            g.drawLine(drawX, drawY, drawX + width, drawY);
-
-            // Dark accent seam below the trim
-            g.setColor(new Color(12, 14, 18));
-            g.drawLine(drawX, drawY + 4, drawX + width, drawY + 4);
-
-            // Industrial floor panel seams and rivet accents every 80px
-            int panelW = 80;
-            for (int px = 0; px < width; px += panelW) {
-                int sx = drawX + px;
-                g.setColor(new Color(15, 17, 22));
-                g.drawLine(sx, drawY + 4, sx, drawY + height);
-                g.setColor(new Color(50, 55, 65));
-                g.drawLine(sx + 1, drawY + 4, sx + 1, drawY + height);
-
-                // Small metal rivets near top seam
-                g.setColor(new Color(90, 95, 110));
-                g.fillOval(sx + 6, drawY + 8, 3, 3);
-                g.fillOval(sx + panelW - 9, drawY + 8, 3, 3);
+            if (customColor != null) {
+                renderProceduralGround(g, drawX, drawY, width, height, customColor);
+                return;
             }
+            BufferedImage img = AssetManager.getInstance().getImage(type.getAssetKey());
+            if (img != null) {
+                renderTiled(g, img, drawX, drawY, width, height, false);
+                return;
+            }
+            renderProceduralGround(g, drawX, drawY, width, height, new Color(24, 26, 32));
             return;
         }
 
-        // Other generic blocks (tile without stretching)
+        // Other generic blocks / barrels
         BufferedImage img = AssetManager.getInstance().getImage(type.getAssetKey());
         if (img != null) {
-            int tw = img.getWidth();
-            int th = img.getHeight();
-            if (width <= tw && height <= th) {
-                g.drawImage(img, drawX, drawY, width, height, null);
+            renderTiled(g, img, drawX, drawY, width, height, false);
+        } else {
+            g.setColor(customColor != null ? customColor : new Color(70, 70, 80));
+            g.fillRect(drawX, drawY, width, height);
+            g.setColor(Color.BLACK);
+            g.drawRect(drawX, drawY, width, height);
+        }
+    }
+
+    private void renderProceduralGround(Graphics2D g, int drawX, int drawY, int width, int height, Color base) {
+        g.setColor(base);
+        g.fillRect(drawX, drawY, width, height);
+
+        // Sleek metal walking trim on top edge
+        g.setColor(new Color(80, 85, 100));
+        g.fillRect(drawX, drawY, width, 4);
+        g.setColor(new Color(130, 140, 160));
+        g.drawLine(drawX, drawY, drawX + width, drawY);
+
+        // Dark accent seam below the trim
+        g.setColor(new Color(12, 14, 18));
+        g.drawLine(drawX, drawY + 4, drawX + width, drawY + 4);
+
+        // Industrial floor panel seams and rivet accents every 80px
+        int panelW = 80;
+        for (int px = 0; px < width; px += panelW) {
+            int sx = drawX + px;
+            g.setColor(new Color(15, 17, 22));
+            g.drawLine(sx, drawY + 4, sx, drawY + height);
+            g.setColor(new Color(50, 55, 65));
+            g.drawLine(sx + 1, drawY + 4, sx + 1, drawY + height);
+
+            // Small metal rivets near top seam
+            g.setColor(new Color(90, 95, 110));
+            g.fillOval(sx + 6, drawY + 8, 3, 3);
+            g.fillOval(sx + panelW - 9, drawY + 8, 3, 3);
+        }
+    }
+
+    private void renderTiled(Graphics2D g, BufferedImage img, int drawX, int drawY, int width, int height, boolean flipV) {
+        int tw = img.getWidth();
+        int th = img.getHeight();
+
+        if (width <= tw && height <= th) {
+            if (flipV) {
+                g.drawImage(img, drawX, drawY + height, width, -height, null);
             } else {
-                // Tile repeatedly instead of stretching
-                for (int tx = 0; tx < width; tx += tw) {
-                    for (int ty = 0; ty < height; ty += th) {
-                        int rw = Math.min(tw, width - tx);
-                        int rh = Math.min(th, height - ty);
+                g.drawImage(img, drawX, drawY, width, height, null);
+            }
+        } else {
+            for (int tx = 0; tx < width; tx += tw) {
+                int rw = Math.min(tw, width - tx);
+                for (int ty = 0; ty < height; ty += th) {
+                    int rh = Math.min(th, height - ty);
+                    if (flipV) {
+                        g.drawImage(img, drawX + tx, drawY + ty + rh, rw, -rh, null);
+                    } else {
                         g.drawImage(img, drawX + tx, drawY + ty, rw, rh, null);
                     }
                 }
             }
-        } else {
-            g.setColor(new Color(70, 70, 80));
-            g.fillRect(drawX, drawY, width, height);
-            g.setColor(Color.BLACK);
-            g.drawRect(drawX, drawY, width, height);
         }
     }
 }

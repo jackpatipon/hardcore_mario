@@ -31,6 +31,11 @@ public class Player extends LivingEntity {
     private double aimAngle = 0.0; // In degrees
     private int kills = 0;
 
+    // Walk animation: 2-frame walking cycle (alternates frames 1 and 2 while walking, locks to frame 1 when idle)
+    private double walkAnimTimer = 0.0;
+    private int currentFrame = 1;
+    public static final double WALK_FRAME_DURATION = 0.14; // Seconds per frame (~7 steps/second)
+
     public Player(double x, double y) {
         super(x, y, Constants.PLAYER_WIDTH, Constants.PLAYER_HEIGHT, Constants.PLAYER_MAX_HP);
         this.maxMagazine = Constants.DEFAULT_MAGAZINE_SIZE;
@@ -150,6 +155,16 @@ public class Player extends LivingEntity {
             }
         }
 
+        // Walk animation: alternates frames 1 and 2 while walking, locks to frame 1 when idle
+        boolean isMoving = Math.abs(velocity.getX()) > 10.0;
+        if (isMoving) {
+            walkAnimTimer += deltaTime;
+            currentFrame = ((int) (walkAnimTimer / WALK_FRAME_DURATION) % 2) + 1;
+        } else {
+            walkAnimTimer = 0.0;
+            currentFrame = 1;
+        }
+
         // Apply gravity
         velocity.setY(Math.min(velocity.getY() + Constants.GRAVITY * deltaTime, Constants.MAX_FALL_SPEED));
     }
@@ -215,12 +230,11 @@ public class Player extends LivingEntity {
 
         if (crouching) {
             sprite = am.getImage("player_crouch");
-        } else if (!isGrounded) {
-            sprite = am.getImage("player_jump");
         } else {
-            // 8-directional aiming sprite based on aimAngle
+            // 8-directional aiming sprite based on aimAngle and animation frame
             String dirKey = am.get8DirectionKey(aimAngle);
-            sprite = am.getImage("player_aim_" + dirKey);
+            int frame = (!isGrounded && Math.abs(velocity.getX()) <= 10.0) ? 2 : currentFrame;
+            sprite = am.getDirectionalSprite("player", dirKey, frame);
         }
 
         if (sprite != null) {
@@ -254,4 +268,7 @@ public class Player extends LivingEntity {
     public double getReloadTimer() { return reloadTimer; }
     public int getKills() { return kills; }
     public double getAimAngle() { return aimAngle; }
+    public int getCurrentFrame() { return currentFrame; }
+    public double getWalkAnimTimer() { return walkAnimTimer; }
+    public boolean isMoving() { return Math.abs(velocity.getX()) > 10.0; }
 }
