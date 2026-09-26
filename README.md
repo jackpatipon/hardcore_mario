@@ -17,7 +17,7 @@
 <p align="center">
   <br>
   <a href="https://github.com/jackpatipon/hardcore_mario/releases/latest">
-    <b>👉 📥 [คลิกที่นี่เพื่อดาวน์โหลดเกมเวอร์ชันล่าสุด v1.0.0 ไปเล่นได้ทันที] 👈</b>
+    <b>👉 📥 [ดาวน์โหลดเกมเวอร์ชันล่าสุด] 👈</b>
   </a>
 </p>
 
