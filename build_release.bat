@@ -42,7 +42,7 @@ exit /b 1
 
 :COMPILE
 echo [1/4] Compiling latest game source code...
-call compile.bat
+call compile.bat --no-run
 if %errorlevel% neq 0 (
     echo [ERROR] Compilation failed!
     pause

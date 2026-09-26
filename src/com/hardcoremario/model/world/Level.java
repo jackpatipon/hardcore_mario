@@ -31,6 +31,7 @@ public class Level implements Updatable, Renderable {
     private double maxY = 1400.0;
     private double width;
     private double height;
+    private int initialStage = 1;
     private int currentStage = 1;
     private boolean stageChanged = true;
 
@@ -45,6 +46,7 @@ public class Level implements Updatable, Renderable {
     private String statusMessage = "";
 
     public Level(int stageNumber) {
+        this.initialStage = stageNumber;
         this.currentStage = stageNumber;
         loadStage(stageNumber);
     }
@@ -325,4 +327,6 @@ public class Level implements Updatable, Renderable {
     public boolean isMissionComplete() { return missionComplete; }
     public boolean isGameOver() { return gameOver; }
     public int getCurrentStage() { return currentStage; }
+    public int getInitialStage() { return initialStage; }
+    public void setInitialStage(int stage) { this.initialStage = stage; }
 }

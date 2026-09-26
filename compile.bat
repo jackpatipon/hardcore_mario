@@ -54,7 +54,12 @@ if exist sources.txt del sources.txt
 
 if %COMPILE_STATUS% equ 0 (
     echo [SUCCESS] Compilation completed successfully.
+    if "%~1"=="--no-run" exit /b 0
+    echo.
+    echo Launching game...
+    call run.bat --skip-compile
 ) else (
     echo [ERROR] Compilation failed with error code %COMPILE_STATUS%.
+    pause
     exit /b %COMPILE_STATUS%
 )

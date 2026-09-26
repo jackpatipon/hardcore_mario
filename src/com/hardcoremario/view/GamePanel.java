@@ -49,15 +49,20 @@ public class GamePanel extends JPanel {
         BufferedImage cursorImg = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         this.blankCursor = toolkit.createCustomCursor(cursorImg, new Point(0, 0), "blank cursor");
 
-        // Start with normal OS cursor on Title Screen
-        setCursor(Cursor.getDefaultCursor());
+        // If testing a specific stage (stage > 1), skip Title Screen and start playing immediately!
+        if (level.getInitialStage() > 1) {
+            this.gameState = GameState.PLAYING;
+            setCursor(blankCursor);
+            com.hardcoremario.core.SoundManager.getInstance().playStageMusic(level.getInitialStage());
+        } else {
+            this.gameState = GameState.TITLE;
+            setCursor(Cursor.getDefaultCursor());
+            com.hardcoremario.core.SoundManager.getInstance().playStageMusic(1);
+        }
 
         // Snap camera immediately to player spawn within level bounds
         camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
         camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
-
-        // Play Title / Stage music right on startup
-        com.hardcoremario.core.SoundManager.getInstance().playStageMusic(1);
     }
 
     public void updateGame(double deltaTime) {
@@ -72,8 +77,8 @@ public class GamePanel extends JPanel {
 
             titleScreen.update(deltaTime, inputHandler);
             if (titleScreen.consumeStartRequested()) {
-                // Apply difficulty and start gameplay in stage 1
-                level.loadStage(1);
+                // Start gameplay in configured initial stage (defaults to 1, or stage set in Main)
+                level.loadStage(level.getInitialStage());
                 camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
                 camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
                 gameState = GameState.PLAYING;
@@ -96,6 +101,21 @@ public class GamePanel extends JPanel {
         if (inputHandler.consumeColorCycle()) {
             com.hardcoremario.core.GameSettings.getInstance().cycleNextBulletColor();
             com.hardcoremario.core.SoundManager.getInstance().playPickup();
+        }
+
+        // Quick stage jump shortcuts for testing (F1: Stage 1, F2: Stage 2, F3: Stage 3)
+        if (inputHandler.consumeF1()) {
+            level.loadStage(1);
+            camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
+            camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
+        } else if (inputHandler.consumeF2()) {
+            level.loadStage(2);
+            camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
+            camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
+        } else if (inputHandler.consumeF3()) {
+            level.loadStage(3);
+            camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
+            camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
         }
 
         // Return to main menu if M pressed
