@@ -302,13 +302,13 @@ public class VerifyGame {
                     throw new RuntimeException("ERROR: Veteran bullet speed should be 420!");
                 }
 
-                settings.setDifficulty(com.hardcoremario.core.GameSettings.Difficulty.PSYCO);
-                com.hardcoremario.model.entity.Guard psycoGuard = new com.hardcoremario.model.entity.Guard(100, 100, 200);
-                if (psycoGuard.getMaxHp() != 75 || psycoGuard.getHp() != 75) {
-                    throw new RuntimeException("ERROR: Psyco Guard should have 75 HP! Got: " + psycoGuard.getHp());
+                settings.setDifficulty(com.hardcoremario.core.GameSettings.Difficulty.PSYCHO);
+                com.hardcoremario.model.entity.Guard psychoGuard = new com.hardcoremario.model.entity.Guard(100, 100, 200);
+                if (psychoGuard.getMaxHp() != 75 || psychoGuard.getHp() != 75) {
+                    throw new RuntimeException("ERROR: Psycho Guard should have 75 HP! Got: " + psychoGuard.getHp());
                 }
                 if (settings.getDifficulty().getEnemyBulletSpeed() != 580.0) {
-                    throw new RuntimeException("ERROR: Psyco bullet speed should be 580!");
+                    throw new RuntimeException("ERROR: Psycho bullet speed should be 580!");
                 }
 
                 settings.setDifficulty(com.hardcoremario.core.GameSettings.Difficulty.GODLIKE);

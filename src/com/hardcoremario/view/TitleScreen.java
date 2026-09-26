@@ -9,7 +9,7 @@ import java.awt.*;
 /**
  * TitleScreen renders the main game menu with:
  * - PLAY button to start the game
- * - Difficulty selector: ROOKIE, VETERAN, PSYCO, GODLIKE
+ * - Difficulty selector: ROOKIE, VETERAN, PSYCHO, GODLIKE
  * - Bullet color accessibility settings for colorblindness and high visibility
  * - Animated interactive buttons, live bullet preview, and keyboard shortcuts
  */
@@ -88,7 +88,7 @@ public class TitleScreen {
             SoundManager.getInstance().playPickup();
         }
         if (input.consumeNumber3()) {
-            GameSettings.getInstance().setDifficulty(GameSettings.Difficulty.PSYCO);
+            GameSettings.getInstance().setDifficulty(GameSettings.Difficulty.PSYCHO);
             SoundManager.getInstance().playPickup();
         }
         if (input.consumeNumber4()) {
