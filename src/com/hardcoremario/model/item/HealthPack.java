@@ -51,10 +51,8 @@ public class HealthPack extends Item {
         int drawX = (int) (getX() + (width - displayW) / 2.0 - offsetX);
         int drawY = (int) (getY() + (height - displayH) - offsetY);
 
-        // Gentle floating bob animation
-        if (floating) {
-            drawY += (int) (Math.sin(bobTimer) * 3);
-        }
+        // Gentle synchronized floating bob animation for all health packs (both mid-air and on blocks)
+        drawY += (int) (Math.sin(bobTimer) * 3);
 
         // Pulsating green medical glow behind health pack for high visibility
         int glowAlpha = 70 + (int) (Math.sin(bobTimer * 2.5) * 35);
