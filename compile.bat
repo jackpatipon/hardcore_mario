@@ -47,8 +47,16 @@ if not exist bin mkdir bin
 
 :: Find all java files and compile
 dir /s /b src\*.java > sources.txt
-"%JAVAC_CMD%" -encoding UTF-8 -cp "lib/*;bin" -d bin @sources.txt
-set COMPILE_STATUS=%errorlevel%
+
+:: Target universal Java 8 compatibility so the game runs on all Java versions (8 to 27+)
+set "RELEASE_FLAG=--release 8 -Xlint:-options"
+"%JAVAC_CMD%" --release 8 -version >nul 2>nul
+if !errorlevel! neq 0 (
+    set "RELEASE_FLAG=-source 1.8 -target 1.8"
+)
+
+"%JAVAC_CMD%" !RELEASE_FLAG! -encoding UTF-8 -cp "lib/*;bin" -d bin @sources.txt
+set COMPILE_STATUS=!errorlevel!
 if exist sources.txt del sources.txt
 
 if %COMPILE_STATUS% equ 0 (
