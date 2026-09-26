@@ -29,7 +29,9 @@ public class Guard extends Enemy {
     public static final double WALK_FRAME_DURATION = 0.16;
 
     public Guard(double x, double y, double patrolDistance) {
-        super(x, y, Constants.PLAYER_WIDTH, Constants.PLAYER_HEIGHT, Constants.GUARD_MAX_HP, Constants.GUARD_SIGHT_RANGE, Constants.GUARD_FIRE_COOLDOWN);
+        super(x, y, Constants.PLAYER_WIDTH, Constants.PLAYER_HEIGHT,
+              com.hardcoremario.core.GameSettings.getInstance().getDifficulty().getEnemyHp(),
+              Constants.GUARD_SIGHT_RANGE, Constants.GUARD_FIRE_COOLDOWN);
         this.patrolStartX = x;
         this.patrolDistance = patrolDistance;
     }
@@ -86,7 +88,7 @@ public class Guard extends Enemy {
         EnemyBullet bullet = new EnemyBullet(
             muzzleX, muzzleY,
             dir.getX(), dir.getY(),
-            Constants.ENEMY_BULLET_SPEED,
+            com.hardcoremario.core.GameSettings.getInstance().getDifficulty().getEnemyBulletSpeed(),
             Constants.ENEMY_BULLET_DAMAGE,
             this
         );

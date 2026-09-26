@@ -6,20 +6,28 @@ import java.awt.event.*;
  * Handles all keyboard and mouse inputs.
  */
 public class InputHandler implements KeyListener, MouseListener, MouseMotionListener {
-    // Keyboard state flags
-    private boolean moveLeft;
-    private boolean moveRight;
-    private boolean jump;
-    private boolean crouch;
-    private boolean reloadRequested;
-    private boolean restartRequested;
-    private boolean toggleHelpRequested;
-    private boolean pauseRequested;
+    // Keyboard state flags (volatile for thread visibility between EDT and GameLoopThread)
+    private volatile boolean moveLeft;
+    private volatile boolean moveRight;
+    private volatile boolean jump;
+    private volatile boolean crouch;
+    private volatile boolean reloadRequested;
+    private volatile boolean restartRequested;
+    private volatile boolean toggleHelpRequested;
+    private volatile boolean pauseRequested;
+    private volatile boolean enterRequested;
+    private volatile boolean cRequested;
+    private volatile boolean num1Requested;
+    private volatile boolean num2Requested;
+    private volatile boolean num3Requested;
+    private volatile boolean num4Requested;
+    private volatile boolean menuRequested;
 
     // Mouse state
-    private int mouseX;
-    private int mouseY;
-    private boolean mouseLeftPressed;
+    private volatile int mouseX;
+    private volatile int mouseY;
+    private volatile boolean mouseLeftPressed;
+    private volatile boolean mouseClicked;
 
     @Override
     public void keyPressed(KeyEvent e) {
@@ -52,6 +60,31 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
             case KeyEvent.VK_P:
                 pauseRequested = true;
                 break;
+            case KeyEvent.VK_ENTER:
+                enterRequested = true;
+                break;
+            case KeyEvent.VK_C:
+                cRequested = true;
+                break;
+            case KeyEvent.VK_1:
+            case KeyEvent.VK_NUMPAD1:
+                num1Requested = true;
+                break;
+            case KeyEvent.VK_2:
+            case KeyEvent.VK_NUMPAD2:
+                num2Requested = true;
+                break;
+            case KeyEvent.VK_3:
+            case KeyEvent.VK_NUMPAD3:
+                num3Requested = true;
+                break;
+            case KeyEvent.VK_4:
+            case KeyEvent.VK_NUMPAD4:
+                num4Requested = true;
+                break;
+            case KeyEvent.VK_M:
+                menuRequested = true;
+                break;
         }
     }
 
@@ -83,21 +116,38 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
 
     @Override
     public void mousePressed(MouseEvent e) {
+        this.mouseX = e.getX();
+        this.mouseY = e.getY();
         if (e.getButton() == MouseEvent.BUTTON1) {
             mouseLeftPressed = true;
+            mouseClicked = true;
             restartRequested = true;
         }
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
+        this.mouseX = e.getX();
+        this.mouseY = e.getY();
         if (e.getButton() == MouseEvent.BUTTON1) {
             mouseLeftPressed = false;
+            mouseClicked = true; // Also mark click on release for reliable click detection
         }
     }
 
+    public void setMousePosition(int x, int y) {
+        this.mouseX = x;
+        this.mouseY = y;
+    }
+
     @Override
-    public void mouseClicked(MouseEvent e) {}
+    public void mouseClicked(MouseEvent e) {
+        this.mouseX = e.getX();
+        this.mouseY = e.getY();
+        if (e.getButton() == MouseEvent.BUTTON1) {
+            mouseClicked = true;
+        }
+    }
 
     @Override
     public void mouseEntered(MouseEvent e) {}
@@ -148,5 +198,53 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
         boolean r = pauseRequested;
         pauseRequested = false;
         return r;
+    }
+
+    public boolean consumeMouseClick() {
+        boolean c = mouseClicked;
+        mouseClicked = false;
+        return c;
+    }
+
+    public boolean consumeEnter() {
+        boolean e = enterRequested;
+        enterRequested = false;
+        return e;
+    }
+
+    public boolean consumeColorCycle() {
+        boolean c = cRequested;
+        cRequested = false;
+        return c;
+    }
+
+    public boolean consumeNumber1() {
+        boolean n = num1Requested;
+        num1Requested = false;
+        return n;
+    }
+
+    public boolean consumeNumber2() {
+        boolean n = num2Requested;
+        num2Requested = false;
+        return n;
+    }
+
+    public boolean consumeNumber3() {
+        boolean n = num3Requested;
+        num3Requested = false;
+        return n;
+    }
+
+    public boolean consumeNumber4() {
+        boolean n = num4Requested;
+        num4Requested = false;
+        return n;
+    }
+
+    public boolean consumeMenu() {
+        boolean m = menuRequested;
+        menuRequested = false;
+        return m;
     }
 }

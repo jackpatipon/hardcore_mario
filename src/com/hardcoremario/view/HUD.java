@@ -14,6 +14,19 @@ import java.awt.image.BufferedImage;
 public class HUD {
     private boolean showHelp = false;
 
+    private static final String THAI_FONT = getThaiFont();
+
+    private static String getThaiFont() {
+        String[] candidates = {"Tahoma", "Leelawadee UI", "Microsoft Sans Serif"};
+        for (String c : candidates) {
+            Font f = new Font(c, Font.PLAIN, 12);
+            if (f.canDisplay('ก') && f.canDisplay('ภ')) {
+                return c;
+            }
+        }
+        return Font.SANS_SERIF;
+    }
+
     public void render(Graphics2D g, Level level, InputHandler input) {
         Player player = level.getPlayer();
         AssetManager am = AssetManager.getInstance();
@@ -84,19 +97,29 @@ public class HUD {
         g.setColor(new Color(255, 100, 100));
         g.drawString("KILLS: " + player.getKills(), killX + 12, killY + 18);
 
-        // Stage Indicator (Top Center)
+        // Stage Indicator (Top Center Left)
         g.setColor(new Color(20, 20, 20, 210));
-        g.fillRoundRect(Constants.SCREEN_WIDTH / 2 - 60, 14, 120, 32, 10, 10);
+        g.fillRoundRect(Constants.SCREEN_WIDTH / 2 - 125, 14, 115, 32, 10, 10);
         g.setColor(new Color(0, 255, 255));
-        g.drawRoundRect(Constants.SCREEN_WIDTH / 2 - 60, 14, 120, 32, 10, 10);
+        g.drawRoundRect(Constants.SCREEN_WIDTH / 2 - 125, 14, 115, 32, 10, 10);
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 14));
-        g.drawString("STAGE " + level.getCurrentStage(), Constants.SCREEN_WIDTH / 2 - 32, 35);
+        g.drawString("STAGE " + level.getCurrentStage(), Constants.SCREEN_WIDTH / 2 - 100, 35);
+
+        // Difficulty Badge (Top Center Right)
+        com.hardcoremario.core.GameSettings.Difficulty diff = com.hardcoremario.core.GameSettings.getInstance().getDifficulty();
+        g.setColor(new Color(20, 20, 20, 210));
+        g.fillRoundRect(Constants.SCREEN_WIDTH / 2 + 5, 14, 120, 32, 10, 10);
+        g.setColor(diff.getBadgeColor());
+        g.drawRoundRect(Constants.SCREEN_WIDTH / 2 + 5, 14, 120, 32, 10, 10);
+        g.setFont(new Font("Impact", Font.PLAIN, 15));
+        g.drawString(diff.getCodeName(), Constants.SCREEN_WIDTH / 2 + 18, 35);
 
         // 4. Subtle Controls Hint (Bottom Left)
-        g.setColor(new Color(255, 255, 255, 150));
-        g.setFont(new Font("Arial", Font.PLAIN, 11));
-        g.drawString("[W,A,S,D] Move/Jump/Crouch | [Mouse] Aim | [L-Click] Shoot | [H] Help", 16, Constants.SCREEN_HEIGHT - 16);
+        g.setColor(new Color(255, 255, 255, 160));
+        g.setFont(new Font(THAI_FONT, Font.PLAIN, 11));
+        com.hardcoremario.core.GameSettings.BulletColorTheme theme = com.hardcoremario.core.GameSettings.getInstance().getBulletColorTheme();
+        g.drawString("[W,A,S,D] Move/Crouch | [Mouse] Shoot | [R] Reload | [C] Bullet: " + theme.getDisplayName() + " | [ESC] Menu", 16, Constants.SCREEN_HEIGHT - 16);
 
         // 5. Help Overlay (if toggled)
         if (showHelp) {

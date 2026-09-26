@@ -19,15 +19,24 @@ public class EnemyBullet extends Projectile {
         int drawX = (int) (getX() - offsetX);
         int drawY = (int) (getY() - offsetY);
 
-        BufferedImage img = AssetManager.getInstance().getImage("bullet_enemy");
-        if (img != null) {
-            g.drawImage(img, drawX, drawY, width, height, null);
-        } else {
-            // Fallback: glowing red laser bullet
-            g.setColor(new Color(255, 60, 60));
-            g.fillOval(drawX, drawY, width, height);
-            g.setColor(new Color(255, 200, 200));
-            g.fillOval(drawX + 3, drawY + 3, width - 6, height - 6);
-        }
+        com.hardcoremario.core.GameSettings.BulletColorTheme theme =
+            com.hardcoremario.core.GameSettings.getInstance().getBulletColorTheme();
+
+        // 1. High-visibility outer glowing halo (for accessibility and low vision)
+        Color glow = new Color(theme.getMainColor().getRed(), theme.getMainColor().getGreen(), theme.getMainColor().getBlue(), 110);
+        g.setColor(glow);
+        g.fillOval(drawX - 3, drawY - 3, width + 6, height + 6);
+
+        // 2. High-contrast dark edge rim (makes it pop against bright backgrounds)
+        g.setColor(new Color(10, 10, 15, 200));
+        g.fillOval(drawX - 1, drawY - 1, width + 2, height + 2);
+
+        // 3. Main vivid bullet body
+        g.setColor(theme.getMainColor());
+        g.fillOval(drawX, drawY, width, height);
+
+        // 4. Ultra-bright hot center core
+        g.setColor(theme.getCoreColor());
+        g.fillOval(drawX + 3, drawY + 3, width - 6, height - 6);
     }
 }

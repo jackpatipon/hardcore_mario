@@ -30,6 +30,7 @@ public class Main {
             frame.pack();
             frame.setLocationRelativeTo(null); // Center on screen
             frame.setVisible(true);
+            gamePanel.requestFocusInWindow();
 
             // Start the 60 FPS Game Loop
             GameEngine engine = new GameEngine(gamePanel);

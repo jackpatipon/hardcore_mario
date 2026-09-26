@@ -279,6 +279,110 @@ public class VerifyGame {
                 System.out.println("[VERIFIED] SoundManager real .wav audio engine initialized and tested successfully!");
             }
 
+            // Verify GameSettings, Difficulty scaling, and Bullet Color Accessibility
+            {
+                com.hardcoremario.core.GameSettings settings = com.hardcoremario.core.GameSettings.getInstance();
+                
+                // Test all 4 difficulty levels and their parameters
+                settings.setDifficulty(com.hardcoremario.core.GameSettings.Difficulty.ROOKIE);
+                com.hardcoremario.model.entity.Guard rookieGuard = new com.hardcoremario.model.entity.Guard(100, 100, 200);
+                if (rookieGuard.getMaxHp() != 35 || rookieGuard.getHp() != 35) {
+                    throw new RuntimeException("ERROR: Rookie Guard should have 35 HP! Got: " + rookieGuard.getHp());
+                }
+                if (settings.getDifficulty().getEnemyBulletSpeed() != 300.0) {
+                    throw new RuntimeException("ERROR: Rookie bullet speed should be 300!");
+                }
+
+                settings.setDifficulty(com.hardcoremario.core.GameSettings.Difficulty.VETERAN);
+                com.hardcoremario.model.entity.Guard veteranGuard = new com.hardcoremario.model.entity.Guard(100, 100, 200);
+                if (veteranGuard.getMaxHp() != 50 || veteranGuard.getHp() != 50) {
+                    throw new RuntimeException("ERROR: Veteran Guard should have 50 HP! Got: " + veteranGuard.getHp());
+                }
+                if (settings.getDifficulty().getEnemyBulletSpeed() != 420.0) {
+                    throw new RuntimeException("ERROR: Veteran bullet speed should be 420!");
+                }
+
+                settings.setDifficulty(com.hardcoremario.core.GameSettings.Difficulty.PSYCO);
+                com.hardcoremario.model.entity.Guard psycoGuard = new com.hardcoremario.model.entity.Guard(100, 100, 200);
+                if (psycoGuard.getMaxHp() != 75 || psycoGuard.getHp() != 75) {
+                    throw new RuntimeException("ERROR: Psyco Guard should have 75 HP! Got: " + psycoGuard.getHp());
+                }
+                if (settings.getDifficulty().getEnemyBulletSpeed() != 580.0) {
+                    throw new RuntimeException("ERROR: Psyco bullet speed should be 580!");
+                }
+
+                settings.setDifficulty(com.hardcoremario.core.GameSettings.Difficulty.GODLIKE);
+                com.hardcoremario.model.entity.Guard godlikeGuard = new com.hardcoremario.model.entity.Guard(100, 100, 200);
+                if (godlikeGuard.getMaxHp() != 125 || godlikeGuard.getHp() != 125) {
+                    throw new RuntimeException("ERROR: GODLIKE Guard should have 125 HP! Got: " + godlikeGuard.getHp());
+                }
+                if (settings.getDifficulty().getEnemyBulletSpeed() != 780.0) {
+                    throw new RuntimeException("ERROR: GODLIKE bullet speed should be 780!");
+                }
+
+                // Verify BulletColorThemes
+                if (com.hardcoremario.core.GameSettings.BulletColorTheme.values().length != 6) {
+                    throw new RuntimeException("ERROR: Expected 6 bullet color themes!");
+                }
+                for (com.hardcoremario.core.GameSettings.BulletColorTheme theme : com.hardcoremario.core.GameSettings.BulletColorTheme.values()) {
+                    if (theme.getDisplayName() == null || theme.getMainColor() == null || theme.getCoreColor() == null || theme.getAccessibilityTag() == null) {
+                        throw new RuntimeException("ERROR: Incomplete bullet theme palette: " + theme);
+                    }
+                }
+
+                // Test TitleScreen UI update and rendering
+                com.hardcoremario.view.TitleScreen titleScreen = new com.hardcoremario.view.TitleScreen();
+                BufferedImage testImg = new BufferedImage(Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+                java.awt.Graphics2D g2 = testImg.createGraphics();
+                titleScreen.render(g2, Constants.SCREEN_WIDTH / 2, 515);
+                g2.dispose();
+
+                // Test Play button click
+                InputHandler titleInput = new InputHandler();
+                titleInput.setMousePosition(Constants.SCREEN_WIDTH / 2, 515); // inside play button
+                java.awt.event.MouseEvent me = new java.awt.event.MouseEvent(
+                    new javax.swing.JPanel(), java.awt.event.MouseEvent.MOUSE_PRESSED,
+                    System.currentTimeMillis(), 0, Constants.SCREEN_WIDTH / 2, 515, 1, false, java.awt.event.MouseEvent.BUTTON1
+                );
+                titleInput.mousePressed(me);
+                titleScreen.update(0.016, titleInput);
+                if (!titleScreen.consumeStartRequested()) {
+                    throw new RuntimeException("ERROR: TitleScreen PLAY button click was not recognized!");
+                }
+
+                // Test clicking each Difficulty button
+                for (int i = 0; i < com.hardcoremario.core.GameSettings.Difficulty.values().length; i++) {
+                    java.awt.Rectangle dRect = com.hardcoremario.view.TitleScreen.getDifficultyBounds(i);
+                    titleInput.setMousePosition(dRect.x + dRect.width / 2, dRect.y + dRect.height / 2);
+                    java.awt.event.MouseEvent dMe = new java.awt.event.MouseEvent(
+                        new javax.swing.JPanel(), java.awt.event.MouseEvent.MOUSE_PRESSED,
+                        System.currentTimeMillis(), 0, dRect.x + dRect.width / 2, dRect.y + dRect.height / 2, 1, false, java.awt.event.MouseEvent.BUTTON1
+                    );
+                    titleInput.mousePressed(dMe);
+                    titleScreen.update(0.016, titleInput);
+                    if (settings.getDifficulty() != com.hardcoremario.core.GameSettings.Difficulty.values()[i]) {
+                        throw new RuntimeException("ERROR: Difficulty button " + i + " click did not update GameSettings!");
+                    }
+                }
+
+                // Test clicking each Bullet Color button
+                for (int i = 0; i < com.hardcoremario.core.GameSettings.BulletColorTheme.values().length; i++) {
+                    java.awt.Rectangle tRect = com.hardcoremario.view.TitleScreen.getThemeBounds(i);
+                    titleInput.setMousePosition(tRect.x + tRect.width / 2, tRect.y + tRect.height / 2);
+                    java.awt.event.MouseEvent tMe = new java.awt.event.MouseEvent(
+                        new javax.swing.JPanel(), java.awt.event.MouseEvent.MOUSE_PRESSED,
+                        System.currentTimeMillis(), 0, tRect.x + tRect.width / 2, tRect.y + tRect.height / 2, 1, false, java.awt.event.MouseEvent.BUTTON1
+                    );
+                    titleInput.mousePressed(tMe);
+                    titleScreen.update(0.016, titleInput);
+                    if (settings.getBulletColorTheme() != com.hardcoremario.core.GameSettings.BulletColorTheme.values()[i]) {
+                        throw new RuntimeException("ERROR: Theme button " + i + " click did not update GameSettings!");
+                    }
+                }
+
+                System.out.println("[VERIFIED] All Difficulty buttons, Bullet Color buttons, and PLAY button click hitboxes verified 100%!");
+            }
+
             System.out.println("[VERIFIED] All stages load, simulate, and complete with ZERO errors!");
         } catch (Throwable t) {
             t.printStackTrace();
