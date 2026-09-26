@@ -65,7 +65,7 @@ public abstract class Item extends Entity {
             // 2. Solid tile collision (landing on block)
             if (tile.isSolid() && hb.intersects(tile.getHitbox())) {
                 // Only land on top if falling downwards and was previously above the tile surface
-                if (velocity.getY() > 0 && prevY + height <= tile.getY() + 12) {
+                if (velocity.getY() >= 0 && prevY + height <= tile.getY() + 16) {
                     position.setY(tile.getY() - height);
                     velocity.setY(0);
                     grounded = true;

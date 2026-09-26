@@ -147,7 +147,7 @@ public class Level implements Updatable, Renderable {
             item.update(deltaTime);
             item.updatePhysicsAndCollisions(tiles, deltaTime);
 
-            if (!item.isActive()) {
+            if (!item.isActive() || item.getY() > maxY + 300) {
                 itemIt.remove();
                 continue;
             }

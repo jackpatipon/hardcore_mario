@@ -149,18 +149,21 @@ public class DrawioLevelLoader {
                     maxX = Math.max(maxX, gameX + gameW);
                     maxY = Math.max(maxY, gameY + gameH);
                 } else if (style.contains("shape=cross")) {
-                    // Item: Health Pack (44x44 for crisp high visibility)
-                    int itemW = Math.max((int) Math.round(gameW > 0 ? gameW : 44), 44);
-                    int itemH = Math.max((int) Math.round(gameH > 0 ? gameH : 44), 44);
-                    HealthPack pack = new HealthPack(gameX, gameY, itemW, itemH);
+                    // Item: Health Pack - Centered precisely on the coordinates designated in draw.io
+                    double centerX = gameX + gameW / 2.0;
+                    double centerY = gameY + gameH / 2.0;
+                    int itemSize = 36;
+                    double posX = centerX - itemSize / 2.0;
+                    double posY = centerY - itemSize / 2.0;
+                    HealthPack pack = new HealthPack(posX, posY, itemSize, itemSize);
                     if (style.contains("decor") || value.contains("decor") || style.contains("locked=1") || style.contains("movable=0")) {
                         pack.setFloating(true);
                     }
                     data.items.add(pack);
-                    minX = Math.min(minX, gameX);
-                    minY = Math.min(minY, gameY);
-                    maxX = Math.max(maxX, gameX + itemW);
-                    maxY = Math.max(maxY, gameY + itemH);
+                    minX = Math.min(minX, posX);
+                    minY = Math.min(minY, posY);
+                    maxX = Math.max(maxX, posX + itemSize);
+                    maxY = Math.max(maxY, posY + itemSize);
                 } else if (style.contains("triangle") || style.contains("rotation=-90")) {
                     // Hazard: Spikes (Instant death)
                     boolean isFlipped = style.contains("flipV=1") || style.contains("flipH=1") || style.contains("rotation=90");
@@ -204,37 +207,17 @@ public class DrawioLevelLoader {
 
 
             // Determine item floating vs grounded physics:
-            // 1. If multiple items are vertically aligned in the same column (like decorative pixel-art patterns),
-            //    they must float (otherwise gravity would make them fall and merge on top of each other).
+            // Items that are part of decorative multi-item patterns (e.g. Heart shape in Stage 3)
+            // float in place so the decorative design does not collapse.
+            // All isolated gameplay items respond to gravity and will fall when the block below them breaks.
             for (HealthPack item : data.items) {
                 for (HealthPack other : data.items) {
                     if (item == other) continue;
-                    if (Math.abs(item.getX() - other.getX()) < 15) {
+                    // Two items in the same vertical column (within 25px) form a decorative pattern
+                    if (Math.abs(item.getCenterX() - other.getCenterX()) < 25) {
                         item.setFloating(true);
                         other.setFloating(true);
                     }
-                }
-            }
-
-            // 2. For isolated items: items placed directly on a block rest on it and will fall if the block breaks.
-            //    Items placed floating in mid-air float in place.
-            for (HealthPack item : data.items) {
-                if (item.isFloating()) continue;
-                boolean hasFloorBelow = false;
-                double itemBottom = item.getY() + item.getHeight();
-                for (Tile tile : data.tiles) {
-                    if (!tile.isSolid()) continue;
-                    // Check horizontal alignment with tile
-                    if (tile.getX() <= item.getCenterX() && item.getCenterX() <= tile.getX() + tile.getWidth()) {
-                        // Check if tile top is directly underneath item bottom (within 16px)
-                        if (tile.getY() >= itemBottom - 4 && tile.getY() - itemBottom <= 16) {
-                            hasFloorBelow = true;
-                            break;
-                        }
-                    }
-                }
-                if (!hasFloorBelow) {
-                    item.setFloating(true);
                 }
             }
 
@@ -370,7 +353,10 @@ public class DrawioLevelLoader {
         data.enemies.add(new Guard(1200 * S, 340 * S, 0));
         data.tiles.add(new Tile(1240 * S, 500 * S, 20 * S, 20 * S, Tile.TileType.SOLID_BLOCK));
         data.tiles.add(new Tile(1280 * S, 420 * S, 20 * S, 20 * S, Tile.TileType.BREAKABLE_BLOCK));
-        data.items.add(new HealthPack(1285 * S, 400 * S)); // Item on breakable block
+        int hpSize = 36;
+        double hpCenterX = (1280 + 10) * S;
+        double hpCenterY = (405 + 5) * S;
+        data.items.add(new HealthPack(hpCenterX - hpSize / 2.0, hpCenterY - hpSize / 2.0, hpSize, hpSize)); // Item on breakable block
         data.tiles.add(new Tile(1340 * S, 500 * S, 20 * S, 20 * S, Tile.TileType.SOLID_BLOCK));
         data.tiles.add(new Tile(1400 * S, 460 * S, 20 * S, 20 * S, Tile.TileType.SOLID_BLOCK));
         data.enemies.add(new Guard(1400 * S, 420 * S, 0));
