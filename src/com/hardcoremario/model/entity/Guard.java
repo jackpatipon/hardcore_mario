@@ -191,14 +191,9 @@ public class Guard extends Enemy {
             sprite = am.getDirectionalSprite("guard", dirKey, currentFrame);
         } else {
             String dirKey = facingRight ? "e" : "w";
-            String idleKey = facingRight ? "guard_idle_right" : "guard_idle_left";
-
-            // If user adds animated guard frames in the future (e.g. guard_idle_right_1 or guard_aim_e_1), use them!
-            if (am.hasImage(idleKey + "_" + currentFrame)) {
-                sprite = am.getImage(idleKey + "_" + currentFrame);
-            } else if (am.hasImage("guard_aim_" + dirKey + "_" + currentFrame)) {
-                sprite = am.getDirectionalSprite("guard", dirKey, currentFrame);
-            } else {
+            sprite = am.getDirectionalSprite("guard", dirKey, currentFrame);
+            if (sprite == null) {
+                String idleKey = facingRight ? "guard_idle_right" : "guard_idle_left";
                 sprite = am.getImage(idleKey);
             }
         }
