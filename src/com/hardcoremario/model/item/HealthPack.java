@@ -10,20 +10,21 @@ import java.awt.image.BufferedImage;
  * Health Pack item that restores HP when collected.
  */
 public class HealthPack extends Item {
+    public static final int DEFAULT_SIZE = 44;
     private final int healAmount;
 
     public HealthPack(double x, double y) {
-        super(x, y, 24, 24);
+        super(x, y, DEFAULT_SIZE, DEFAULT_SIZE);
         this.healAmount = 30;
     }
 
     public HealthPack(double x, double y, int width, int height) {
-        super(x, y, width, height);
+        super(x, y, Math.max(width, DEFAULT_SIZE), Math.max(height, DEFAULT_SIZE));
         this.healAmount = 30;
     }
 
     public HealthPack(double x, double y, int healAmount, int width, int height) {
-        super(x, y, width, height);
+        super(x, y, Math.max(width, DEFAULT_SIZE), Math.max(height, DEFAULT_SIZE));
         this.healAmount = healAmount;
     }
 
@@ -44,23 +45,32 @@ public class HealthPack extends Item {
 
     @Override
     public void render(Graphics2D g, double offsetX, double offsetY) {
-        int drawX = (int) (getX() - offsetX);
-        int drawY = (int) (getY() - offsetY);
+        int displayW = Math.max(width, DEFAULT_SIZE);
+        int displayH = Math.max(height, DEFAULT_SIZE);
 
-        // Soft green glow behind health pack
-        g.setColor(new Color(50, 255, 100, 60));
-        g.fillOval(drawX - 2, drawY - 2, width + 4, height + 4);
+        int drawX = (int) (getX() + (width - displayW) / 2.0 - offsetX);
+        int drawY = (int) (getY() + (height - displayH) - offsetY);
+
+        // Gentle floating bob animation
+        if (floating) {
+            drawY += (int) (Math.sin(bobTimer) * 3);
+        }
+
+        // Pulsating green medical glow behind health pack for high visibility
+        int glowAlpha = 70 + (int) (Math.sin(bobTimer * 2.5) * 35);
+        g.setColor(new Color(46, 204, 113, Math.max(25, Math.min(125, glowAlpha))));
+        g.fillOval(drawX - 4, drawY - 4, displayW + 8, displayH + 8);
 
         BufferedImage img = AssetManager.getInstance().getImage("health_pack");
         if (img != null) {
-            g.drawImage(img, drawX, drawY, width, height, null);
+            g.drawImage(img, drawX, drawY, displayW, displayH, null);
         } else {
             g.setColor(Color.WHITE);
-            g.fillRoundRect(drawX, drawY, width, height, Math.min(6, width / 3), Math.min(6, height / 3));
+            g.fillRoundRect(drawX, drawY, displayW, displayH, Math.min(8, displayW / 3), Math.min(8, displayH / 3));
             g.setColor(new Color(230, 40, 40));
-            int crossThick = Math.max(2, width / 5);
-            g.fillRect(drawX + (width - crossThick) / 2, drawY + 2, crossThick, height - 4);
-            g.fillRect(drawX + 2, drawY + (height - crossThick) / 2, width - 4, crossThick);
+            int crossThick = Math.max(3, displayW / 5);
+            g.fillRect(drawX + (displayW - crossThick) / 2, drawY + 4, crossThick, displayH - 8);
+            g.fillRect(drawX + 4, drawY + (displayH - crossThick) / 2, displayW - 8, crossThick);
         }
     }
 }

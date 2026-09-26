@@ -149,9 +149,9 @@ public class DrawioLevelLoader {
                     maxX = Math.max(maxX, gameX + gameW);
                     maxY = Math.max(maxY, gameY + gameH);
                 } else if (style.contains("shape=cross")) {
-                    // Item: Health Pack
-                    int itemW = (int) Math.round(gameW > 0 ? gameW : 20);
-                    int itemH = (int) Math.round(gameH > 0 ? gameH : 20);
+                    // Item: Health Pack (44x44 for crisp high visibility)
+                    int itemW = Math.max((int) Math.round(gameW > 0 ? gameW : 44), 44);
+                    int itemH = Math.max((int) Math.round(gameH > 0 ? gameH : 44), 44);
                     HealthPack pack = new HealthPack(gameX, gameY, itemW, itemH);
                     if (style.contains("decor") || value.contains("decor") || style.contains("locked=1") || style.contains("movable=0")) {
                         pack.setFloating(true);
