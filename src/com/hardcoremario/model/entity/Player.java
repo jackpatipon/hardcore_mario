@@ -229,21 +229,36 @@ public class Player extends LivingEntity {
         AssetManager am = AssetManager.getInstance();
 
         if (crouching) {
-            sprite = am.getImage("player_crouch");
+            // 2-directional crouch: crouch_e (right) vs crouch_w (left)
+            sprite = am.getCrouchSprite("player", facingRight);
+
+            if (sprite != null) {
+                // Adaptive aspect ratio: supports both 64x40 (ratio ~1.6) and 1:1 square (like other directional sprites)
+                double aspect = (double) sprite.getWidth() / sprite.getHeight();
+                int drawW = 64;
+                int drawH = (int) Math.round(64.0 / aspect);
+                if (drawH < 32) drawH = 32;
+                if (drawH > 64) drawH = 64;
+                int feetY = drawY + height;
+                int spriteY = feetY - drawH + 2;
+
+                g.drawImage(sprite, drawX - 12, spriteY, drawW, drawH, null);
+            } else {
+                g.setColor(new Color(220, 50, 50));
+                g.fillRect(drawX, drawY, width, height);
+            }
         } else {
             // 8-directional aiming sprite based on aimAngle and animation frame
             String dirKey = am.get8DirectionKey(aimAngle);
             int frame = (!isGrounded && Math.abs(velocity.getX()) <= 10.0) ? 2 : currentFrame;
             sprite = am.getDirectionalSprite("player", dirKey, frame);
-        }
 
-        if (sprite != null) {
-            // Draw sprite (centered if needed or matching bounding box)
-            g.drawImage(sprite, drawX - 12, drawY - (crouching ? 6 : 6), 64, 64, null);
-        } else {
-            // Fallback rendering
-            g.setColor(new Color(220, 50, 50));
-            g.fillRect(drawX, drawY, width, height);
+            if (sprite != null) {
+                g.drawImage(sprite, drawX - 12, drawY - 6, 64, 64, null);
+            } else {
+                g.setColor(new Color(220, 50, 50));
+                g.fillRect(drawX, drawY, width, height);
+            }
         }
     }
 

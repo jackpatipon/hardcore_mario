@@ -79,6 +79,7 @@ public class Level implements Updatable, Renderable {
         this.items.addAll(data.items);
 
         statusMessage = "STAGE " + currentStage + " START!";
+        SoundManager.getInstance().playStageMusic(currentStage);
     }
 
     public void handleInput(InputHandler input, Camera camera, double deltaTime) {

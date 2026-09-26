@@ -52,16 +52,29 @@ public class PreviewRender {
             ImageIO.write(imgWalking, "PNG", outWalking);
             System.out.println("Walking preview saved to " + outWalking.getAbsolutePath());
 
-            // Save closeups
-            int px = (int) (level.getPlayer().getX() - camera.getX() - 15);
-            int py = (int) (level.getPlayer().getY() - camera.getY() - 10);
-            BufferedImage closeStanding = imgStanding.getSubimage(px, py, 70, 70);
-            ImageIO.write(closeStanding, "PNG", new File("preview_closeup_standing.png"));
+            // 3. Crouching Preview (East and North-East)
+            Level crouchLevel = new Level(1);
+            Camera crouchCam = new Camera(crouchLevel.getMinX(), crouchLevel.getMinY(), crouchLevel.getMaxX(), crouchLevel.getMaxY());
+            InputHandler crouchInput = new InputHandler();
+            GamePanel crouchPanel = new GamePanel(crouchLevel, crouchCam, crouchInput);
+            crouchPanel.setSize(Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT);
 
-            BufferedImage closeWalking = imgWalking.getSubimage(px, py, 70, 70);
-            ImageIO.write(closeWalking, "PNG", new File("preview_closeup_walking.png"));
+            // Press S to crouch
+            java.awt.Component dummy = new java.awt.Canvas();
+            crouchInput.keyPressed(new java.awt.event.KeyEvent(dummy, java.awt.event.KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, java.awt.event.KeyEvent.VK_S, 's'));
 
-            System.out.println("Closeups saved successfully!");
+            // Step game loop so player handles crouch input
+            for (int i = 0; i < 5; i++) {
+                crouchPanel.updateGame(1.0 / 60.0);
+            }
+
+            BufferedImage imgCrouch = new BufferedImage(Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+            crouchPanel.paint(imgCrouch.getGraphics());
+            int cpx = (int) (crouchLevel.getPlayer().getX() - crouchCam.getX() - 15);
+            int cpy = (int) (crouchLevel.getPlayer().getY() - crouchCam.getY() - 40);
+            BufferedImage closeCrouch = imgCrouch.getSubimage(cpx, cpy, 70, 70);
+            ImageIO.write(closeCrouch, "PNG", new File("preview_closeup_crouch_e.png"));
+            System.out.println("Crouching preview saved!");
 
         } catch (Exception e) {
             e.printStackTrace();

@@ -39,6 +39,8 @@ public class AssetManager {
         loadImage("player_idle", "assets/characters/player/idle.png");
         loadImage("player_jump", "assets/characters/player/jump.png");
         loadImage("player_crouch", "assets/characters/player/crouch.png");
+        loadImage("player_crouch_e", "assets/characters/player/crouch_e.png");
+        loadImage("player_crouch_w", "assets/characters/player/crouch_w.png");
 
         // Guard states
         loadImage("guard_idle_right", "assets/characters/guard/idle_right.png");
@@ -58,6 +60,7 @@ public class AssetManager {
         loadImage("block_metal", "assets/environment/block_metal.png");
         loadImage("barrel", "assets/environment/barrel.png");
         loadImage("hazard_spikes", "assets/environment/hazard_spikes.png");
+        loadImage("exit", "assets/environment/exit.png");
 
         // Backgrounds
         loadImage("bg_main", "assets/backgrounds/bg_main.png");
@@ -162,6 +165,35 @@ public class AssetManager {
 
     public BufferedImage getDirectionalSprite(String entityType, String dirKey) {
         return getDirectionalSprite(entityType, dirKey, 1);
+    }
+
+    /**
+    /**
+     * Retrieves the 2-directional crouching sprite for an entity (East/Right or West/Left).
+     * @param entityType "player" or "guard"
+     * @param facingRight true if aiming right (East), false if aiming left (West)
+     * @return crouch_e (right) or crouch_w (left)
+     */
+    public BufferedImage getCrouchSprite(String entityType, boolean facingRight) {
+        String key = entityType + (facingRight ? "_crouch_e" : "_crouch_w");
+        BufferedImage img = imageCache.get(key);
+        if (img != null) return img;
+
+        // Try opposite with fallback if needed
+        String oppKey = entityType + (facingRight ? "_crouch_w" : "_crouch_e");
+        img = imageCache.get(oppKey);
+        if (img != null) return img;
+
+        // General crouch
+        img = imageCache.get(entityType + "_crouch");
+        if (img != null) return img;
+
+        return getDirectionalSprite(entityType, facingRight ? "e" : "w", 1);
+    }
+
+    public BufferedImage getCrouchSprite(String entityType, String dirKey) {
+        boolean facingRight = !dirKey.contains("w");
+        return getCrouchSprite(entityType, facingRight);
     }
 
     /**

@@ -45,6 +45,5 @@ if %COMPILE_STATUS% equ 0 (
     echo [SUCCESS] Compilation completed successfully! Output in 'bin/' folder.
 ) else (
     echo [ERROR] Compilation failed with error code %COMPILE_STATUS%.
-    pause
     exit /b %COMPILE_STATUS%
 )

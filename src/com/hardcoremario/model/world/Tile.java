@@ -116,9 +116,9 @@ public class Tile extends Entity {
         int drawY = (int) (getY() - offsetY);
 
         if (type == TileType.EXIT) {
-            BufferedImage img = AssetManager.getInstance().getImage(type.getAssetKey());
-            if (img != null) {
-                renderTiled(g, img, drawX, drawY, width, height, false);
+            if (AssetManager.getInstance().hasImage(type.getAssetKey())) {
+                BufferedImage img = AssetManager.getInstance().getImage(type.getAssetKey());
+                g.drawImage(img, drawX, drawY, width, height, null);
                 return;
             }
             // Sci-Fi Exit Portal
@@ -254,22 +254,27 @@ public class Tile extends Entity {
     private void renderTiled(Graphics2D g, BufferedImage img, int drawX, int drawY, int width, int height, boolean flipV) {
         int tw = img.getWidth();
         int th = img.getHeight();
+        int step = com.hardcoremario.util.Constants.TILE_SIZE;
 
-        if (width <= tw && height <= th) {
+        if (width <= step && height <= step) {
             if (flipV) {
                 g.drawImage(img, drawX, drawY + height, width, -height, null);
             } else {
                 g.drawImage(img, drawX, drawY, width, height, null);
             }
         } else {
-            for (int tx = 0; tx < width; tx += tw) {
-                int rw = Math.min(tw, width - tx);
-                for (int ty = 0; ty < height; ty += th) {
-                    int rh = Math.min(th, height - ty);
+            for (int tx = 0; tx < width; tx += step) {
+                int rw = Math.min(step, width - tx);
+                int srcW = (int) Math.round((double) rw / step * tw);
+                for (int ty = 0; ty < height; ty += step) {
+                    int rh = Math.min(step, height - ty);
+                    int srcH = (int) Math.round((double) rh / step * th);
+                    int dx = drawX + tx;
+                    int dy = drawY + ty;
                     if (flipV) {
-                        g.drawImage(img, drawX + tx, drawY + ty + rh, rw, -rh, null);
+                        g.drawImage(img, dx, dy, dx + rw, dy + rh, 0, srcH, srcW, 0, null);
                     } else {
-                        g.drawImage(img, drawX + tx, drawY + ty, rw, rh, null);
+                        g.drawImage(img, dx, dy, dx + rw, dy + rh, 0, 0, srcW, srcH, null);
                     }
                 }
             }

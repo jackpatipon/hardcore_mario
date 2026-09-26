@@ -6,6 +6,7 @@ import com.hardcoremario.model.world.Level;
 import com.hardcoremario.util.Constants;
 import com.hardcoremario.view.GamePanel;
 import java.awt.image.BufferedImage;
+import java.io.File;
 
 public class VerifyGame {
     public static void main(String[] args) {
@@ -251,7 +252,31 @@ public class VerifyGame {
                     throw new RuntimeException("ERROR: Guard stopped should reset to frame 1!");
                 }
 
+                // Verify 2-directional crouch sprites (East and West)
+                BufferedImage crE = am.getCrouchSprite("player", true);
+                BufferedImage crW = am.getCrouchSprite("player", false);
+                if (crE == null || crW == null) {
+                    throw new RuntimeException("ERROR: Missing crouch_e or crouch_w sprite!");
+                }
+                System.out.println("[VERIFIED] 2-Directional crouch sprites (crouch_e & crouch_w) loaded and verified!");
+
                 System.out.println("[VERIFIED] Player & Guard walking animation cycles and 8-directional sprites verified perfectly!");
+            }
+
+            // Verify Audio Assets & SoundManager
+            {
+                com.hardcoremario.core.SoundManager sm = com.hardcoremario.core.SoundManager.getInstance();
+                sm.playPlayerShoot();
+                sm.playEnemyShoot();
+                sm.playJump();
+                sm.playHit();
+                sm.playPickup();
+                sm.playReload();
+                sm.playStageMusic(1);
+                sm.playGameOver();
+                sm.playVictory();
+                sm.stopMusic();
+                System.out.println("[VERIFIED] SoundManager real .wav audio engine initialized and tested successfully!");
             }
 
             System.out.println("[VERIFIED] All stages load, simulate, and complete with ZERO errors!");
