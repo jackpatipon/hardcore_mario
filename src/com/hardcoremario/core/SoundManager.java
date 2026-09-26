@@ -393,7 +393,13 @@ public class SoundManager {
             try (AudioInputStream in = getPcmStream(file)) {
                 format = in.getFormat();
                 int frameSize = format.getFrameSize();
-                audioBytes = in.readAllBytes();
+                java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                byte[] buf = new byte[8192];
+                int r;
+                while ((r = in.read(buf)) != -1) {
+                    baos.write(buf, 0, r);
+                }
+                audioBytes = baos.toByteArray();
             }
 
             for (int i = 0; i < clips.length; i++) {
