@@ -373,6 +373,23 @@ public class Player extends LivingEntity {
         }
     }
 
+
+    /**
+     * Applies damage from Boss attacks.
+     * Uses a brief 0.04s invulnerability window so that all bullets in a rapid trailing stream
+     * (spaced 0.08s apart) can register damage (e.g. 6 damage x 3 bullets = 18 total damage),
+     * while still preventing multi-collision within the same physics subframe.
+     */
+    public void takeBossDamage(int amount) {
+        if (debugMode || isDead()) return;
+        if (invulnerableTimer > 0) return;
+        currentHp = Math.max(0, currentHp - amount);
+        invulnerableTimer = 0.04;
+        if (currentHp <= 0) {
+            onDeath();
+        }
+    }
+
     @Override
     protected void onDeath() {
         SoundManager.getInstance().playGameOver();

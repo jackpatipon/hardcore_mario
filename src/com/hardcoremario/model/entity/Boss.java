@@ -84,6 +84,11 @@ public class Boss extends Enemy {
         }
     }
 
+    // Damage tuning: Guard normal bullet is 15 damage.
+    // 3 shots combined = ~1.2x of guard bullet = 15 * 1.2 = 18 damage.
+    // Each bullet in the tail deals 6 damage (6 * 3 = 18 damage total).
+    public static final int BULLET_DAMAGE = (int) Math.round((Constants.ENEMY_BULLET_DAMAGE * 1.2) / BURST_COUNT_PER_SET);
+
     /**
      * Fires a 5-way spread barrage of block-penetrating BossBullets along the specified base angle.
      */
@@ -94,7 +99,7 @@ public class Boss extends Enemy {
         // 5-way spread angle offsets: -28°, -14°, 0°, +14°, +28°
         double[] angleOffsets = {-28.0, -14.0, 0.0, 14.0, 28.0};
         double bulletSpeed = 440.0;
-        int bulletDamage = 25;
+        int bulletDamage = BULLET_DAMAGE;
 
         for (double offsetDeg : angleOffsets) {
             double angle = baseAngle + Math.toRadians(offsetDeg);

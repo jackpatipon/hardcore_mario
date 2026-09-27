@@ -263,7 +263,11 @@ public class Level implements Updatable, Renderable {
             // C. EnemyBullet vs Player
             if (p instanceof EnemyBullet) {
                 if (!player.isDead() && p.collidesWith(player)) {
-                    player.takeDamage(p.getDamage());
+                    if (p instanceof BossBullet) {
+                        player.takeBossDamage(p.getDamage());
+                    } else {
+                        player.takeDamage(p.getDamage());
+                    }
                     ParticleSystem.getInstance().spawnSparks(player.getCenterX(), player.getCenterY(), Color.RED);
                     SoundManager.getInstance().playHit();
                     p.setActive(false);
