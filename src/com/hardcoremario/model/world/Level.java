@@ -106,20 +106,22 @@ public class Level implements Updatable, Renderable {
         player.update(deltaTime);
         player.updatePhysicsAndCollisions(this, deltaTime);
 
-        // Instant death if fallen out of world bounds
-        if (player.getY() > maxY + 150) {
+        // Instant death if fallen out of world bounds (disabled in debug mode)
+        if (!player.isDebugMode() && player.getY() > maxY + 150) {
             player.takeDamage(99999);
             gameOver = true;
             return;
         }
 
-        // Check if Player touches Spikes (Instant Death!)
-        for (Tile tile : tiles) {
-            if (tile.isActive() && tile.isHazard() && player.getHitbox().intersects(tile.getHitbox())) {
-                player.takeDamage(99999); // Instant Kill!
-                ParticleSystem.getInstance().spawnSparks(player.getCenterX(), player.getCenterY(), Color.RED);
-                gameOver = true;
-                return;
+        // Check if Player touches Spikes (Instant Death! - disabled in debug mode)
+        if (!player.isDebugMode()) {
+            for (Tile tile : tiles) {
+                if (tile.isActive() && tile.isHazard() && player.getHitbox().intersects(tile.getHitbox())) {
+                    player.takeDamage(99999); // Instant Kill!
+                    ParticleSystem.getInstance().spawnSparks(player.getCenterX(), player.getCenterY(), Color.RED);
+                    gameOver = true;
+                    return;
+                }
             }
         }
 

@@ -25,6 +25,7 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
     private volatile boolean f1Requested;
     private volatile boolean f2Requested;
     private volatile boolean f3Requested;
+    private volatile boolean f12Requested;
 
     // Mouse state
     private volatile int mouseX;
@@ -96,6 +97,9 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
                 break;
             case KeyEvent.VK_F3:
                 f3Requested = true;
+                break;
+            case KeyEvent.VK_F12:
+                f12Requested = true;
                 break;
         }
     }
@@ -275,6 +279,12 @@ public class InputHandler implements KeyListener, MouseListener, MouseMotionList
     public boolean consumeF3() {
         boolean f = f3Requested;
         f3Requested = false;
+        return f;
+    }
+
+    public boolean consumeF12() {
+        boolean f = f12Requested;
+        f12Requested = false;
         return f;
     }
 }

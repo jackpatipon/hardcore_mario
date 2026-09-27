@@ -27,6 +27,7 @@ public class Player extends LivingEntity {
     private double shootTimer = 0.0;
     private double reloadTimer = 0.0;
     private boolean reloading = false;
+    private boolean debugMode = false;
 
     private double aimAngle = 0.0; // In degrees
     private int kills = 0;
@@ -53,6 +54,32 @@ public class Player extends LivingEntity {
 
         // Turn facing direction based on mouse position relative to player center
         facingRight = mouseWorldX >= getCenterX();
+
+        // Debug Mode: Noclip & Free 8-Directional Flight + Unlimited Ammo
+        if (debugMode) {
+            double flySpeed = Constants.PLAYER_MOVE_SPEED * 1.6;
+            double targetVx = 0.0;
+            double targetVy = 0.0;
+            if (input.isMoveLeft()) targetVx -= flySpeed;
+            if (input.isMoveRight()) targetVx += flySpeed;
+            if (input.isJump()) targetVy -= flySpeed;   // W, Space, Up = Fly Up
+            if (input.isCrouch()) targetVy += flySpeed; // S, Down = Fly Down
+
+            velocity.setX(targetVx);
+            velocity.setY(targetVy);
+            isGrounded = false;
+            crouching = false;
+
+            // Infinite ammo & continuous shooting without reload delay
+            currentAmmo = maxMagazine;
+            reserveAmmo = 999;
+            reloading = false;
+
+            if (input.isMouseLeftPressed() && shootTimer <= 0) {
+                shoot(mouseWorldX, mouseWorldY, level);
+            }
+            return;
+        }
 
         // 2. Crouch handling (lowers head hitbox downwards towards feet)
         boolean wantsCrouch = input.isCrouch();
@@ -121,7 +148,12 @@ public class Player extends LivingEntity {
     }
 
     private void shoot(double targetX, double targetY, Level level) {
-        currentAmmo--;
+        if (debugMode) {
+            currentAmmo = maxMagazine;
+            reserveAmmo = 999;
+        } else {
+            currentAmmo--;
+        }
         shootTimer = Constants.FIRE_RATE_INTERVAL;
 
         // Weapon muzzle position offset
@@ -177,8 +209,10 @@ public class Player extends LivingEntity {
             currentFrame = 1;
         }
 
-        // Apply gravity
-        velocity.setY(Math.min(velocity.getY() + Constants.GRAVITY * deltaTime, Constants.MAX_FALL_SPEED));
+        // Apply gravity (disabled in debug noclip mode)
+        if (!debugMode) {
+            velocity.setY(Math.min(velocity.getY() + Constants.GRAVITY * deltaTime, Constants.MAX_FALL_SPEED));
+        }
     }
 
     /**
@@ -199,6 +233,14 @@ public class Player extends LivingEntity {
     }
 
     public void updatePhysicsAndCollisions(Level level, double deltaTime) {
+        if (debugMode) {
+            // Noclip: pass freely through all solid blocks and boundaries
+            position.setX(position.getX() + velocity.getX() * deltaTime);
+            position.setY(position.getY() + velocity.getY() * deltaTime);
+            isGrounded = false;
+            return;
+        }
+
         // Move X and resolve solid tile collisions
         position.setX(position.getX() + velocity.getX() * deltaTime);
         checkTileCollisionsX(level);
@@ -266,6 +308,12 @@ public class Player extends LivingEntity {
     }
 
     @Override
+    public void takeDamage(int amount) {
+        if (debugMode) return; // Completely immune to damage (อมตะ)
+        super.takeDamage(amount);
+    }
+
+    @Override
     public void render(Graphics2D g, double offsetX, double offsetY) {
         int drawX = (int) (getX() - offsetX);
         int drawY = (int) (getY() - offsetY);
@@ -273,6 +321,14 @@ public class Player extends LivingEntity {
         // Flash opacity when invulnerable
         if (isInvulnerable() && ((int) (System.currentTimeMillis() / 60) % 2 == 0)) {
             return; // Skip rendering frame for blink effect
+        }
+
+        Composite originalComp = g.getComposite();
+        if (debugMode) {
+            // Ethereal cyan aura & ghost translucency for noclip
+            g.setColor(new Color(0, 255, 255, 65));
+            g.fillOval(drawX - 14, drawY - 10, 68, 68);
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.85f));
         }
 
         // Select sprite
@@ -311,6 +367,10 @@ public class Player extends LivingEntity {
                 g.fillRect(drawX, drawY, width, height);
             }
         }
+
+        if (debugMode) {
+            g.setComposite(originalComp);
+        }
     }
 
     @Override
@@ -338,4 +398,16 @@ public class Player extends LivingEntity {
     public double getWalkAnimTimer() { return walkAnimTimer; }
     public boolean isMoving() { return Math.abs(velocity.getX()) > 10.0; }
     public boolean isCrouching() { return crouching; }
+    public boolean isDebugMode() { return debugMode; }
+
+    public void toggleDebugMode() {
+        this.debugMode = !this.debugMode;
+        if (this.debugMode) {
+            this.currentHp = this.maxHp;
+            this.currentAmmo = this.maxMagazine;
+            this.reserveAmmo = 999;
+            this.reloading = false;
+            this.velocity.setY(0);
+        }
+    }
 }

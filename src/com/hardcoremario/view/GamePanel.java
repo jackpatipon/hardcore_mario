@@ -3,6 +3,7 @@ package com.hardcoremario.view;
 import com.hardcoremario.core.AssetManager;
 import com.hardcoremario.core.Camera;
 import com.hardcoremario.core.InputHandler;
+import com.hardcoremario.model.entity.Player;
 import com.hardcoremario.model.world.Level;
 import com.hardcoremario.util.Constants;
 import java.awt.*;
@@ -117,6 +118,16 @@ public class GamePanel extends JPanel {
             level.loadStage(3);
             camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
             camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
+        }
+
+        // Toggle Debug Mode (F12: Noclip, God Mode, Unlimited Ammo)
+        if (inputHandler.consumeF12()) {
+            Player p = level.getPlayer();
+            p.toggleDebugMode();
+            if (p.isDebugMode()) {
+                com.hardcoremario.core.SoundManager.getInstance().playPickup();
+                ParticleSystem.getInstance().spawnSparks(p.getCenterX(), p.getCenterY(), Color.CYAN);
+            }
         }
 
         // Return to main menu if M pressed

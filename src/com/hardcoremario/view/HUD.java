@@ -70,17 +70,26 @@ public class HUD {
         g.setColor(new Color(60, 20, 20));
         g.fillRect(barStartX, hpY, hpBarW, hpBarH);
 
-        double hpRatio = Math.max(0, (double) player.getHp() / player.getMaxHp());
-        Color hpColor = hpRatio > 0.5 ? new Color(46, 204, 113) : (hpRatio > 0.25 ? new Color(241, 196, 15) : new Color(231, 76, 60));
-        g.setColor(hpColor);
-        g.fillRect(barStartX, hpY, (int) (hpBarW * hpRatio), hpBarH);
+        if (player.isDebugMode()) {
+            g.setColor(new Color(0, 230, 255));
+            g.fillRect(barStartX, hpY, hpBarW, hpBarH);
+            g.setColor(Color.WHITE);
+            g.drawRect(barStartX, hpY, hpBarW, hpBarH);
+            g.setFont(new Font("Arial", Font.BOLD, 12));
+            g.drawString("HP: GOD MODE (อมตะ)", barStartX + 12, hpY + 16);
+        } else {
+            double hpRatio = Math.max(0, (double) player.getHp() / player.getMaxHp());
+            Color hpColor = hpRatio > 0.5 ? new Color(46, 204, 113) : (hpRatio > 0.25 ? new Color(241, 196, 15) : new Color(231, 76, 60));
+            g.setColor(hpColor);
+            g.fillRect(barStartX, hpY, (int) (hpBarW * hpRatio), hpBarH);
 
-        // Border & HP Text
-        g.setColor(Color.WHITE);
-        g.drawRect(barStartX, hpY, hpBarW, hpBarH);
-        g.setFont(new Font("Arial", Font.BOLD, 12));
-        String hpText = "HP: " + player.getHp() + " / " + player.getMaxHp();
-        g.drawString(hpText, barStartX + 12, hpY + 16);
+            // Border & HP Text
+            g.setColor(Color.WHITE);
+            g.drawRect(barStartX, hpY, hpBarW, hpBarH);
+            g.setFont(new Font("Arial", Font.BOLD, 12));
+            String hpText = "HP: " + player.getHp() + " / " + player.getMaxHp();
+            g.drawString(hpText, barStartX + 12, hpY + 16);
+        }
 
         // 2. Ammo Indicator (Below HP Bar)
         int ammoY = hpY + 36;
@@ -96,7 +105,10 @@ public class HUD {
 
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 14));
-        if (player.isReloading()) {
+        if (player.isDebugMode()) {
+            g.setColor(new Color(0, 245, 255));
+            g.drawString("∞ / ∞  (กระสุนไม่จำกัด)", barStartX, ammoY + 16);
+        } else if (player.isReloading()) {
             g.setColor(new Color(255, 180, 0));
             g.drawString("RELOADING...", barStartX, ammoY + 16);
         } else {
@@ -131,11 +143,28 @@ public class HUD {
         g.setFont(new Font("Impact", Font.PLAIN, 15));
         g.drawString(diff.getCodeName(), Constants.SCREEN_WIDTH / 2 + 18, 35);
 
+        // Debug Mode Banner (Top Center)
+        if (player.isDebugMode()) {
+            int dbgW = 340;
+            int dbgH = 26;
+            int dbgX = (Constants.SCREEN_WIDTH - dbgW) / 2;
+            int dbgY = 52;
+            g.setColor(new Color(8, 24, 38, 235));
+            g.fillRoundRect(dbgX, dbgY, dbgW, dbgH, 8, 8);
+            g.setColor(new Color(0, 255, 255, 210));
+            g.drawRoundRect(dbgX, dbgY, dbgW, dbgH, 8, 8);
+            g.setFont(new Font("Arial", Font.BOLD, 12));
+            g.setColor(new Color(0, 255, 255));
+            String dbgText = "★ [F12] NOCLIP • GOD MODE • INF AMMO ★";
+            FontMetrics fm = g.getFontMetrics();
+            g.drawString(dbgText, dbgX + (dbgW - fm.stringWidth(dbgText)) / 2, dbgY + 18);
+        }
+
         // 4. Subtle Controls Hint (Bottom Left)
         g.setColor(new Color(255, 255, 255, 160));
         g.setFont(new Font(THAI_FONT, Font.PLAIN, 11));
         com.hardcoremario.core.GameSettings.BulletColorTheme theme = com.hardcoremario.core.GameSettings.getInstance().getBulletColorTheme();
-        g.drawString("[W,A,S,D] Move/Crouch | [Mouse] Shoot | [R] Reload | [C] Bullet: " + theme.getDisplayName() + " | [ESC] Menu", 16, Constants.SCREEN_HEIGHT - 16);
+        g.drawString("[W,A,S,D] Move/Fly | [Mouse] Shoot | [R] Reload | [C] Bullet | [F12] Debug | [ESC] Menu", 16, Constants.SCREEN_HEIGHT - 16);
 
         // 5. Help Overlay (if toggled)
         if (showHelp) {
@@ -375,8 +404,8 @@ public class HUD {
     }
 
     private void renderHelpOverlay(Graphics2D g) {
-        int w = 500;
-        int h = 280;
+        int w = 530;
+        int h = 305;
         int x = (Constants.SCREEN_WIDTH - w) / 2;
         int y = (Constants.SCREEN_HEIGHT - h) / 2;
 
@@ -391,13 +420,14 @@ public class HUD {
         g.drawString("HOW TO PLAY (Hardcore Mario)", x + 24, y + 40);
 
         g.setFont(new Font("Arial", Font.PLAIN, 15));
-        g.drawString("• A / D : Walk Left / Right", x + 30, y + 80);
-        g.drawString("• W or Space : Jump over blocks and pits", x + 30, y + 110);
-        g.drawString("• S : Crouch / Crawl (lowers hitbox to dodge bullets)", x + 30, y + 140);
-        g.drawString("• Mouse Cursor : 360-degree aiming", x + 30, y + 170);
-        g.drawString("• Left Click : Shoot assault rifle", x + 30, y + 200);
-        g.drawString("• R : Reload rifle", x + 30, y + 230);
-        g.drawString("• Press [H] to close this help window", x + 30, y + 260);
+        g.drawString("• A / D : Walk Left / Right (เหาะซ้าย-ขวาเมื่อเปิด noclip)", x + 30, y + 75);
+        g.drawString("• W or Space : Jump (หรือบินขึ้นเมื่อเปิด noclip)", x + 30, y + 102);
+        g.drawString("• S : Crouch (หรือบินลงเมื่อเปิด noclip)", x + 30, y + 129);
+        g.drawString("• Mouse Cursor : 360-degree aiming", x + 30, y + 156);
+        g.drawString("• Left Click : Shoot assault rifle", x + 30, y + 183);
+        g.drawString("• R : Reload rifle", x + 30, y + 210);
+        g.drawString("• F12 : Debug Mode (Noclip เหาะทะลุฉาก / อมตะ / กระสุนไม่จำกัด)", x + 30, y + 237);
+        g.drawString("• Press [H] to close this help window", x + 30, y + 268);
     }
 
     public void toggleHelp() {
