@@ -80,11 +80,23 @@ public class GamePanel extends JPanel {
             titleScreen.update(deltaTime, inputHandler);
             if (titleScreen.consumeStartRequested()) {
                 // Start gameplay in configured initial stage (defaults to 1, or stage set in Main)
-                level.loadStage(level.getInitialStage());
-                camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
-                camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
-                gameState = GameState.PLAYING;
-                setCursor(blankCursor); // Hide OS cursor, use in-game crosshair
+                warpToStage(level.getInitialStage());
+                return;
+            }
+
+            // Quick stage jump shortcuts (F1-F4) directly from Title Screen
+            if (inputHandler.consumeF1()) {
+                warpToStage(1);
+                return;
+            } else if (inputHandler.consumeF2()) {
+                warpToStage(2);
+                return;
+            } else if (inputHandler.consumeF3()) {
+                warpToStage(3);
+                return;
+            } else if (inputHandler.consumeF4()) {
+                warpToStage(4);
+                return;
             }
             return;
         }
@@ -105,23 +117,15 @@ public class GamePanel extends JPanel {
             com.hardcoremario.core.SoundManager.getInstance().playPickup();
         }
 
-        // Quick stage jump shortcuts for testing (F1: Stage 1, F2: Stage 2, F3: Stage 3)
+        // Quick stage jump shortcuts for testing (F1: Stage 1, F2: Stage 2, F3: Stage 3, F4: Stage 4)
         if (inputHandler.consumeF1()) {
-            level.loadStage(1);
-            camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
-            camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
+            warpToStage(1);
         } else if (inputHandler.consumeF2()) {
-            level.loadStage(2);
-            camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
-            camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
+            warpToStage(2);
         } else if (inputHandler.consumeF3()) {
-            level.loadStage(3);
-            camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
-            camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
+            warpToStage(3);
         } else if (inputHandler.consumeF4()) {
-            level.loadStage(4);
-            camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
-            camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
+            warpToStage(4);
         }
 
         // Toggle Debug Mode (F12: Noclip, God Mode, Unlimited Ammo)
@@ -296,21 +300,56 @@ public class GamePanel extends JPanel {
         g.drawString(opt3, centerX - fmO.stringWidth(opt3) / 2, centerY + 110);
     }
 
+    private void warpToStage(int stage) {
+        level.loadStage(stage);
+        camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
+        camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
+        gameState = GameState.PLAYING;
+        setCursor(blankCursor);
+    }
+
     private void renderBackgrounds(Graphics2D g, double camX, double camY) {
         AssetManager am = AssetManager.getInstance();
         int currentStage = (level != null) ? level.getCurrentStage() : 1;
 
-        BufferedImage bgMain = am.getImage("bg_stage" + currentStage);
-        if (bgMain == null) bgMain = am.getImage("bg_main");
-
-        // Facility background scrolls at 50% speed
-        if (bgMain != null) {
-            int w = bgMain.getWidth();
-            int mainOffsetX = (int) (-(camX * 0.5) % w);
-            while (mainOffsetX > 0) mainOffsetX -= w;
-            for (int x = mainOffsetX; x < getWidth() + w; x += w) {
-                g.drawImage(bgMain, x, 0, w, getHeight(), null);
-            }
+        BufferedImage bg = null;
+        if (am.hasImage("bg_stage" + currentStage)) {
+            bg = am.getImage("bg_stage" + currentStage);
+        } else if (am.hasImage("bg_main")) {
+            bg = am.getImage("bg_main");
         }
+
+        if (bg == null) return;
+
+        int screenW = getWidth();
+        int screenH = getHeight();
+        double scale = 1.6;
+        int bgW = (int) (screenW * scale);
+        int bgH = (int) (screenH * scale);
+
+        if (gameState == GameState.TITLE) {
+            // Center the panoramic backdrop behind the title screen menu
+            int drawX = -(bgW - screenW) / 2;
+            int drawY = -(bgH - screenH) / 2;
+            g.drawImage(bg, drawX, drawY, bgW, bgH, null);
+            return;
+        }
+
+        // Gameplay: Smooth level-mapped parallax (no repeating seams, full vertical & horizontal depth)
+        double minCamX = (camera != null) ? camera.getMinX() : 0.0;
+        double maxCamX = (camera != null) ? Math.max(minCamX, camera.getMaxX() - screenW) : (double) screenW;
+        double minCamY = (camera != null) ? camera.getMinY() : 0.0;
+        double maxCamY = (camera != null) ? Math.max(minCamY, camera.getMaxY() - screenH) : (double) screenH;
+
+        double progressX = (maxCamX > minCamX) ? (camX - minCamX) / (maxCamX - minCamX) : 0.5;
+        double progressY = (maxCamY > minCamY) ? (camY - minCamY) / (maxCamY - minCamY) : 0.5;
+
+        progressX = Math.max(0.0, Math.min(1.0, progressX));
+        progressY = Math.max(0.0, Math.min(1.0, progressY));
+
+        int drawX = (int) (-progressX * (bgW - screenW));
+        int drawY = (int) (-progressY * (bgH - screenH));
+
+        g.drawImage(bg, drawX, drawY, bgW, bgH, null);
     }
 }

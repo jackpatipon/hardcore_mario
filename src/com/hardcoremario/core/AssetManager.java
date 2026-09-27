@@ -69,6 +69,9 @@ public class AssetManager {
 
         // Backgrounds
         loadImage("bg_main", "assets/backgrounds/bg_main.png");
+        loadImage("bg_stage1", "assets/backgrounds/bg_stage1.png");
+        loadImage("bg_stage2", "assets/backgrounds/bg_stage2.png");
+        loadImage("bg_stage3", "assets/backgrounds/bg_stage3.png");
         loadImage("bg_stage4", "assets/backgrounds/bg_stage4.png");
 
         // UI
@@ -238,6 +241,16 @@ public class AssetManager {
     }
 
     private BufferedImage createFallbackImage(String key) {
+        if (key.startsWith("bg_")) {
+            // Subtle dark atmospheric fallback for missing background images
+            BufferedImage bgFallback = new BufferedImage(1280, 720, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = bgFallback.createGraphics();
+            g.setPaint(new java.awt.GradientPaint(0, 0, new Color(16, 20, 30), 0, 720, new Color(36, 24, 18)));
+            g.fillRect(0, 0, 1280, 720);
+            g.dispose();
+            return bgFallback;
+        }
+
         int w = 48, h = 48;
         Color c = Color.MAGENTA;
         if (key.contains("player")) {
