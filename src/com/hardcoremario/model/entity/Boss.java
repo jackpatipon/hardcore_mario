@@ -21,8 +21,13 @@ public class Boss extends Enemy {
 
     private Level level;
     private boolean movingRight = false;
-    private double shootTimer = 2.0; // Initial delay before first barrage
-    public static final double SHOOT_COOLDOWN = 4.0; // 4 seconds cooldown between 5-way volleys
+    public static final int BURST_COUNT_PER_SET = 4; // 4 consecutive volleys per set
+    public static final double BURST_INTERVAL = 0.25; // Delay between volleys within a burst set
+    public static final double SHOOT_COOLDOWN = 4.0; // 4 seconds cooldown between sets
+
+    private double cooldownTimer = 2.0; // Initial delay before first barrage set
+    private int burstShotsRemaining = 0; // Number of volleys remaining in current set
+    private double burstIntervalTimer = 0.0; // Timer between volleys in current burst
 
     private double shieldAnimTimer = 0.0;
     private double shieldHitTimer = 0.0;
@@ -50,11 +55,26 @@ public class Boss extends Enemy {
         shieldAnimTimer += deltaTime * 4.0;
         if (shieldHitTimer > 0) shieldHitTimer -= deltaTime;
 
-        // Attack handling: 5-way spread barrage every 4.0 seconds
-        shootTimer -= deltaTime;
-        if (shootTimer <= 0) {
-            shootTimer = SHOOT_COOLDOWN;
-            fireSpreadBarrage(player, level);
+        // Attack handling: 4-shot burst sequence per set, then 4.0s cooldown
+        if (burstShotsRemaining > 0) {
+            burstIntervalTimer -= deltaTime;
+            if (burstIntervalTimer <= 0) {
+                fireSpreadBarrage(player, level);
+                burstShotsRemaining--;
+                if (burstShotsRemaining > 0) {
+                    burstIntervalTimer = BURST_INTERVAL;
+                } else {
+                    cooldownTimer = SHOOT_COOLDOWN; // All 4 volleys fired -> begin 4.0s cooldown
+                }
+            }
+        } else {
+            cooldownTimer -= deltaTime;
+            if (cooldownTimer <= 0) {
+                // Begin a new 4-volley burst set
+                fireSpreadBarrage(player, level);
+                burstShotsRemaining = BURST_COUNT_PER_SET - 1; // 3 remaining in this set
+                burstIntervalTimer = BURST_INTERVAL;
+            }
         }
     }
 
