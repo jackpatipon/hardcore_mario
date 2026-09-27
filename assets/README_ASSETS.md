@@ -86,9 +86,7 @@
 - **ขนาดแนะนำ:** 1280 x 720 pixels (หรือ 1920 x 1080)
 - **ฟอร์แมต:** PNG หรือ JPG
 - `bg_main.png` : ฉากหลังหลักด่าน 1-3 (ศูนย์วิจัยชีวภาพพังทลาย, โครงสร้างเหล็ก)
-- `bg_far.png` : ฉากท้องฟ้า/หมอกควันระยะไกล (สำหรับทำ Parallax Scrolling เลื่อนช้าๆ)
 - `bg_stage4.png` : **[ใหม่]** ฉากหลังห้องปฏิกรณ์บอสใหญ่ ด่าน 4 (Apex Core Reactor Chamber)
-- `bg_stage4_far.png` : **[ใหม่]** ฉากหลังชั้นลึกของห้องบอส ด่าน 4 (Deep Cybernetic Server Racks / Data Grid)
 
 ---
 

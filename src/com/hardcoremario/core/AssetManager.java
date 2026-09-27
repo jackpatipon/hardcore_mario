@@ -69,9 +69,7 @@ public class AssetManager {
 
         // Backgrounds
         loadImage("bg_main", "assets/backgrounds/bg_main.png");
-        loadImage("bg_far", "assets/backgrounds/bg_far.png");
         loadImage("bg_stage4", "assets/backgrounds/bg_stage4.png");
-        loadImage("bg_stage4_far", "assets/backgrounds/bg_stage4_far.png");
 
         // UI
         loadImage("crosshair", "assets/ui/crosshair.png");

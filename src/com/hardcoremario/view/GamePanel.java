@@ -300,23 +300,10 @@ public class GamePanel extends JPanel {
         AssetManager am = AssetManager.getInstance();
         int currentStage = (level != null) ? level.getCurrentStage() : 1;
 
-        BufferedImage bgFar = am.getImage("bg_stage" + currentStage + "_far");
-        if (bgFar == null) bgFar = am.getImage("bg_far");
-
         BufferedImage bgMain = am.getImage("bg_stage" + currentStage);
         if (bgMain == null) bgMain = am.getImage("bg_main");
 
-        // Distant background scrolls at 20% speed
-        if (bgFar != null) {
-            int w = bgFar.getWidth();
-            int farOffsetX = (int) (-(camX * 0.2) % w);
-            while (farOffsetX > 0) farOffsetX -= w;
-            for (int x = farOffsetX; x < getWidth() + w; x += w) {
-                g.drawImage(bgFar, x, 0, w, getHeight(), null);
-            }
-        }
-
-        // Main facility background scrolls at 50% speed
+        // Facility background scrolls at 50% speed
         if (bgMain != null) {
             int w = bgMain.getWidth();
             int mainOffsetX = (int) (-(camX * 0.5) % w);
