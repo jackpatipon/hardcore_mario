@@ -1,6 +1,7 @@
 package com.hardcoremario.view;
 
 import com.hardcoremario.core.AssetManager;
+import com.hardcoremario.core.GameSettings;
 import com.hardcoremario.core.InputHandler;
 import com.hardcoremario.model.entity.Player;
 import com.hardcoremario.model.world.Level;
@@ -12,6 +13,21 @@ import java.awt.image.BufferedImage;
  * Head-Up Display (HUD) rendering player stats, ammo, health, crosshair, and UI overlays.
  */
 public class HUD {
+    // Victory Screen Layout Bounds
+    public static final int VICTORY_CARD_W = 720;
+    public static final int VICTORY_CARD_H = 436;
+    public static final int VICTORY_CARD_X = (Constants.SCREEN_WIDTH - VICTORY_CARD_W) / 2;
+    public static final int VICTORY_CARD_Y = 50;
+
+    public static final int VICTORY_BTN_W = 400;
+    public static final int VICTORY_BTN_H = 48;
+    public static final int VICTORY_BTN_X = (Constants.SCREEN_WIDTH - VICTORY_BTN_W) / 2;
+    public static final int VICTORY_BTN_Y = VICTORY_CARD_Y + 304;
+
+    public static final Rectangle VICTORY_MENU_BTN_BOUNDS = new Rectangle(
+        VICTORY_BTN_X, VICTORY_BTN_Y, VICTORY_BTN_W, VICTORY_BTN_H
+    );
+
     private boolean showHelp = false;
 
     private static final String THAI_FONT = getThaiFont();
@@ -133,11 +149,13 @@ public class HUD {
 
         // 7. Victory Screen
         if (level.isMissionComplete()) {
-            renderVictory(g, player);
+            renderVictory(g, player, input);
         }
 
-        // 8. Custom Crosshair at Mouse
-        renderCrosshair(g, input.getMouseX(), input.getMouseY());
+        // 8. Custom Crosshair at Mouse (hide during victory screen so regular cursor is visible)
+        if (!level.isMissionComplete()) {
+            renderCrosshair(g, input.getMouseX(), input.getMouseY());
+        }
     }
 
     private void renderCrosshair(Graphics2D g, int mx, int my) {
@@ -170,32 +188,190 @@ public class HUD {
 
         g.setColor(Color.YELLOW);
         g.setFont(new Font("Arial", Font.BOLD, 18));
-        String restart = "Press [R] or Click to Restart";
+        String restart = "Press [R] to Restart Stage | [M] Main Menu";
         fm = g.getFontMetrics();
         g.drawString(restart, (Constants.SCREEN_WIDTH - fm.stringWidth(restart)) / 2, Constants.SCREEN_HEIGHT / 2 + 60);
     }
 
-    private void renderVictory(Graphics2D g, Player player) {
-        g.setColor(new Color(0, 0, 0, 190));
+    private void renderVictory(Graphics2D g, Player player, InputHandler input) {
+        // Semi-transparent dark backdrop overlay
+        g.setColor(new Color(6, 10, 20, 225));
         g.fillRect(0, 0, Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT);
 
-        g.setColor(new Color(46, 204, 113));
-        g.setFont(new Font("Arial", Font.BOLD, 48));
-        String title = "FACILITY ESCAPED!";
+        int cardX = VICTORY_CARD_X;
+        int cardY = VICTORY_CARD_Y;
+        int cardW = VICTORY_CARD_W;
+        int cardH = VICTORY_CARD_H;
+
+        // Glowing outer shadow
+        g.setColor(new Color(255, 215, 0, 45));
+        g.fillRoundRect(cardX - 4, cardY - 4, cardW + 8, cardH + 8, 24, 24);
+
+        // Card background gradient (Dark cyber aesthetic)
+        GradientPaint cardBg = new GradientPaint(
+            cardX, cardY, new Color(18, 24, 38, 248),
+            cardX, cardY + cardH, new Color(10, 14, 22, 252)
+        );
+        g.setPaint(cardBg);
+        g.fillRoundRect(cardX, cardY, cardW, cardH, 20, 20);
+
+        // Card borders: outer gold, inner emerald accent
+        g.setStroke(new BasicStroke(2.2f));
+        g.setColor(new Color(255, 215, 0, 210));
+        g.drawRoundRect(cardX, cardY, cardW, cardH, 20, 20);
+
+        g.setStroke(new BasicStroke(1.0f));
+        g.setColor(new Color(46, 204, 113, 130));
+        g.drawRoundRect(cardX + 3, cardY + 3, cardW - 6, cardH - 6, 17, 17);
+
+        // Top Laurels / Stars
+        g.setColor(new Color(255, 215, 0));
+        g.setFont(new Font("Arial", Font.BOLD, 14));
+        String stars = "★ ★ ★   CONGRATULATIONS!   ★ ★ ★";
         FontMetrics fm = g.getFontMetrics();
-        g.drawString(title, (Constants.SCREEN_WIDTH - fm.stringWidth(title)) / 2, Constants.SCREEN_HEIGHT / 2 - 40);
+        g.drawString(stars, cardX + (cardW - fm.stringWidth(stars)) / 2, cardY + 28);
 
+        // Main Title (with shadow)
+        String title = "MISSION ACCOMPLISHED";
+        g.setFont(new Font("Impact", Font.BOLD, 38));
+        fm = g.getFontMetrics();
+        int tx = cardX + (cardW - fm.stringWidth(title)) / 2;
+        int ty = cardY + 66;
+
+        g.setColor(new Color(0, 0, 0, 230));
+        g.drawString(title, tx + 2, ty + 2);
+
+        GradientPaint titleGrad = new GradientPaint(
+            tx, ty - 28, new Color(255, 240, 120),
+            tx, ty, new Color(255, 180, 20)
+        );
+        g.setPaint(titleGrad);
+        g.drawString(title, tx, ty);
+
+        // Subtitles
+        g.setFont(new Font(THAI_FONT, Font.BOLD, 15));
+        g.setColor(new Color(46, 204, 113));
+        String subThai = "ภารกิจเสร็จสิ้น! คุณเคลียร์ทุกด่านและหลบหนีออกจาก Apex Facility สำเร็จ!";
+        fm = g.getFontMetrics();
+        g.drawString(subThai, cardX + (cardW - fm.stringWidth(subThai)) / 2, cardY + 92);
+
+        g.setFont(new Font("Arial", Font.PLAIN, 12));
+        g.setColor(new Color(175, 195, 215));
+        String subEng = "All 3 Stages Cleared — Syndicate Perimeter Fully Breached!";
+        fm = g.getFontMetrics();
+        g.drawString(subEng, cardX + (cardW - fm.stringWidth(subEng)) / 2, cardY + 110);
+
+        // Decorative Divider
+        g.setPaint(new GradientPaint(
+            cardX + 40, cardY + 124, new Color(255, 215, 0, 20),
+            cardX + cardW / 2, cardY + 124, new Color(255, 215, 0, 190)
+        ));
+        g.drawLine(cardX + 40, cardY + 124, cardX + cardW / 2, cardY + 124);
+        g.setPaint(new GradientPaint(
+            cardX + cardW / 2, cardY + 124, new Color(255, 215, 0, 190),
+            cardX + cardW - 40, cardY + 124, new Color(255, 215, 0, 20)
+        ));
+        g.drawLine(cardX + cardW / 2, cardY + 124, cardX + cardW - 40, cardY + 124);
+
+        // 4 Stat Cards in 2x2 Grid
+        int cardLeftX = cardX + 40;
+        int cardRightX = cardX + 375;
+        int cardRow1Y = cardY + 138;
+        int cardRow2Y = cardY + 218;
+        int cardBoxW = 305;
+        int cardBoxH = 70;
+
+        // Card 1: Clear Status
+        renderStatCard(g, cardLeftX, cardRow1Y, cardBoxW, cardBoxH,
+            "STATUS", "3 / 3 STAGES CLEARED", "100% Complete (จบครบทุกด่าน)", new Color(255, 215, 0));
+
+        // Card 2: Eliminations
+        renderStatCard(g, cardRightX, cardRow1Y, cardBoxW, cardBoxH,
+            "ELIMINATIONS", player.getKills() + " GUARDS DEFEATED", "Total Hostiles Neutralized (ศัตรูที่กำจัด)", new Color(255, 80, 80));
+
+        // Card 3: Difficulty
+        GameSettings.Difficulty diff = GameSettings.getInstance().getDifficulty();
+        renderStatCard(g, cardLeftX, cardRow2Y, cardBoxW, cardBoxH,
+            "DIFFICULTY", diff.getCodeName(), diff.getLabelThai(), diff.getBadgeColor());
+
+        // Card 4: Survival Integrity
+        int hpPercent = (int) Math.max(0, Math.round((double) player.getHp() / player.getMaxHp() * 100));
+        renderStatCard(g, cardRightX, cardRow2Y, cardBoxW, cardBoxH,
+            "SURVIVAL INTEGRITY", player.getHp() + " / " + player.getMaxHp() + " HP", "Health Remaining (" + hpPercent + "%)", new Color(46, 204, 113));
+
+        // Return to Main Menu Interactive Button
+        Rectangle btnRect = VICTORY_MENU_BTN_BOUNDS;
+        boolean hovered = btnRect.contains(input.getMouseX(), input.getMouseY());
+
+        if (hovered) {
+            g.setColor(new Color(0, 240, 255, 110));
+            g.fillRoundRect(btnRect.x - 4, btnRect.y - 4, btnRect.width + 8, btnRect.height + 8, 16, 16);
+
+            GradientPaint btnGrad = new GradientPaint(
+                btnRect.x, btnRect.y, new Color(0, 230, 180),
+                btnRect.x + btnRect.width, btnRect.y + btnRect.height, new Color(0, 160, 245)
+            );
+            g.setPaint(btnGrad);
+        } else {
+            GradientPaint btnGrad = new GradientPaint(
+                btnRect.x, btnRect.y, new Color(24, 70, 56, 240),
+                btnRect.x + btnRect.width, btnRect.y + btnRect.height, new Color(16, 48, 38, 250)
+            );
+            g.setPaint(btnGrad);
+        }
+        g.fillRoundRect(btnRect.x, btnRect.y, btnRect.width, btnRect.height, 12, 12);
+
+        g.setStroke(new BasicStroke(hovered ? 2.0f : 1.5f));
+        g.setColor(hovered ? Color.WHITE : new Color(46, 204, 113, 200));
+        g.drawRoundRect(btnRect.x, btnRect.y, btnRect.width, btnRect.height, 12, 12);
+
+        g.setFont(new Font(THAI_FONT, Font.BOLD, 15));
+        String btnText = "⮌ กลับสู่หน้าหลัก (RETURN TO MAIN MENU)";
+        fm = g.getFontMetrics();
+        int bx = btnRect.x + (btnRect.width - fm.stringWidth(btnText)) / 2;
+        int by = btnRect.y + ((btnRect.height - fm.getHeight()) / 2) + fm.getAscent();
+
+        if (hovered) {
+            g.setColor(new Color(10, 20, 30));
+        } else {
+            g.setColor(Color.WHITE);
+        }
+        g.drawString(btnText, bx, by);
+
+        // Hint text below button
+        g.setFont(new Font(THAI_FONT, Font.PLAIN, 12));
+        g.setColor(new Color(180, 195, 210));
+        String hintText = "กดปุ่ม [SPACE], [ENTER], [R], [M] หรือคลิกที่ปุ่มเพื่อกลับสู่หน้าหลัก";
+        fm = g.getFontMetrics();
+        g.drawString(hintText, cardX + (cardW - fm.stringWidth(hintText)) / 2, cardY + 372);
+    }
+
+    private void renderStatCard(Graphics2D g, int x, int y, int w, int h, String tag, String title, String subtitle, Color accent) {
+        g.setColor(new Color(14, 18, 28, 220));
+        g.fillRoundRect(x, y, w, h, 12, 12);
+
+        g.setStroke(new BasicStroke(1.5f));
+        g.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 160));
+        g.drawRoundRect(x, y, w, h, 12, 12);
+
+        // Accent indicator bar on left edge
+        g.setColor(accent);
+        g.fillRoundRect(x + 3, y + 4, 4, h - 8, 4, 4);
+
+        // Tag / Category
+        g.setFont(new Font("Arial", Font.BOLD, 10));
+        g.setColor(accent);
+        g.drawString(tag.toUpperCase(), x + 16, y + 18);
+
+        // Value / Title
+        g.setFont(new Font("Impact", Font.PLAIN, 18));
         g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.PLAIN, 18));
-        String desc = "Mario successfully broke through the Apex Syndicate defenses! Kills: " + player.getKills();
-        fm = g.getFontMetrics();
-        g.drawString(desc, (Constants.SCREEN_WIDTH - fm.stringWidth(desc)) / 2, Constants.SCREEN_HEIGHT / 2 + 10);
+        g.drawString(title, x + 16, y + 40);
 
-        g.setColor(Color.YELLOW);
-        g.setFont(new Font("Arial", Font.BOLD, 18));
-        String restart = "Press [R] to Play Again";
-        fm = g.getFontMetrics();
-        g.drawString(restart, (Constants.SCREEN_WIDTH - fm.stringWidth(restart)) / 2, Constants.SCREEN_HEIGHT / 2 + 60);
+        // Subtitle
+        g.setFont(new Font(THAI_FONT, Font.PLAIN, 11));
+        g.setColor(new Color(180, 195, 210));
+        g.drawString(subtitle, x + 16, y + 58);
     }
 
     private void renderHelpOverlay(Graphics2D g) {

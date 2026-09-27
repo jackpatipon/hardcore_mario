@@ -27,6 +27,7 @@ public class GamePanel extends JPanel {
     private final HUD hud;
     private final Cursor blankCursor;
     private boolean paused = false;
+    private double victoryTimer = 0.0;
 
     public GamePanel(Level level, Camera camera, InputHandler inputHandler) {
         this.level = level;
@@ -122,16 +123,58 @@ public class GamePanel extends JPanel {
         if (inputHandler.consumeMenu()) {
             gameState = GameState.TITLE;
             paused = false;
+            level.setInitialStage(1);
+            level.loadStage(1);
+            camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
+            camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
             setCursor(Cursor.getDefaultCursor());
             com.hardcoremario.core.SoundManager.getInstance().playStageMusic(1);
             return;
         }
 
-        // Restart check
-        if ((level.isGameOver() || level.isMissionComplete()) && inputHandler.consumeRestart()) {
-            level.reset();
-            camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
-            camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
+        // Mission Complete (All stages cleared!) -> Congratulations screen & return to main menu
+        if (level.isMissionComplete()) {
+            victoryTimer += deltaTime;
+            int mx = inputHandler.getMouseX();
+            int my = inputHandler.getMouseY();
+            boolean btnHovered = HUD.VICTORY_MENU_BTN_BOUNDS.contains(mx, my);
+            setCursor(btnHovered ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR) : Cursor.getDefaultCursor());
+
+            boolean mouseClicked = inputHandler.consumeMouseClick();
+            boolean restartPressed = inputHandler.consumeRestart();
+            boolean enterPressed = inputHandler.consumeEnter();
+            boolean menuPressed = inputHandler.consumeMenu();
+            boolean jumpPressed = inputHandler.isJump();
+
+            // After a brief 0.3s grace period, allow returning to Title Screen via button click or keys
+            if (victoryTimer > 0.3) {
+                if (mouseClicked || restartPressed || enterPressed || menuPressed || jumpPressed) {
+                    gameState = GameState.TITLE;
+                    paused = false;
+                    victoryTimer = 0.0;
+                    level.setInitialStage(1);
+                    level.loadStage(1);
+                    camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
+                    camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
+                    setCursor(Cursor.getDefaultCursor());
+                    com.hardcoremario.core.SoundManager.getInstance().playStageMusic(1);
+                    return;
+                }
+            }
+            return;
+        } else {
+            victoryTimer = 0.0;
+        }
+
+        // Restart check on Game Over (restarts current stage)
+        if (level.isGameOver()) {
+            if (inputHandler.consumeRestart() || inputHandler.consumeMouseClick()) {
+                level.reset();
+                camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
+                camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
+                setCursor(blankCursor);
+                return;
+            }
             return;
         }
 
