@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mxfile host="app.diagrams.net">
   <diagram name="Page-1" id="XuxPV7p2GqZCsF-g3B7T">
-    <mxGraphModel dx="4365" dy="3070" grid="1" gridSize="5" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" background="light-dark(#FFFFFF,#FF9999)" math="0" shadow="0">
+    <mxGraphModel dx="2504" dy="2027" grid="1" gridSize="5" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" background="light-dark(#FFFFFF,#FF9999)" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -7908,10 +7908,10 @@
           <mxGeometry height="20" width="20" x="1140" y="340" as="geometry" />
         </mxCell>
         <mxCell id="nGObgW8y65xKyUhUtbXr-5777" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#0050ef;strokeColor=#001DBC;fontColor=#ffffff;" value="" vertex="1">
-          <mxGeometry height="20" width="20" x="1260" y="320" as="geometry" />
+          <mxGeometry height="20" width="20" x="1260" y="340" as="geometry" />
         </mxCell>
         <mxCell id="nGObgW8y65xKyUhUtbXr-5778" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#0050ef;strokeColor=#001DBC;fontColor=#ffffff;" value="" vertex="1">
-          <mxGeometry height="20" width="20" x="1400" y="320" as="geometry" />
+          <mxGeometry height="20" width="20" x="1380" y="320" as="geometry" />
         </mxCell>
         <mxCell id="nGObgW8y65xKyUhUtbXr-5780" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#0050ef;strokeColor=#001DBC;fontColor=#ffffff;" value="" vertex="1">
           <mxGeometry height="20" width="20" x="1200" y="220" as="geometry" />
@@ -10633,9 +10633,6 @@
         </mxCell>
         <mxCell id="nGObgW8y65xKyUhUtbXr-5857" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=light-dark(#FFFFFF,#FF3333);" value="enemy" vertex="1">
           <mxGeometry height="30" width="20" x="880" y="270" as="geometry" />
-        </mxCell>
-        <mxCell id="nGObgW8y65xKyUhUtbXr-5858" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=light-dark(#FFFFFF,#FF3333);" value="enemy" vertex="1">
-          <mxGeometry height="30" width="20" x="1260" y="290" as="geometry" />
         </mxCell>
         <mxCell id="nGObgW8y65xKyUhUtbXr-5859" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=light-dark(#FFFFFF,#FF3333);" value="enemy" vertex="1">
           <mxGeometry height="30" width="20" x="1460" y="250" as="geometry" />

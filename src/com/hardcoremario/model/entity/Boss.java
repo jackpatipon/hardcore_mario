@@ -21,13 +21,14 @@ public class Boss extends Enemy {
 
     private Level level;
     private boolean movingRight = false;
-    public static final int BURST_COUNT_PER_SET = 4; // 4 consecutive volleys per set
-    public static final double BURST_INTERVAL = 0.25; // Delay between volleys within a burst set
+    public static final int BURST_COUNT_PER_SET = 3; // 3 rapid trailing shots per set ("3 นัดรวด")
+    public static final double BURST_INTERVAL = 0.08; // 0.08s (80ms) interval so bullets follow each other closely like a tail ("ติดตามกันเป็นหาง")
     public static final double SHOOT_COOLDOWN = 4.0; // 4 seconds cooldown between sets
 
     private double cooldownTimer = 2.0; // Initial delay before first barrage set
     private int burstShotsRemaining = 0; // Number of volleys remaining in current set
     private double burstIntervalTimer = 0.0; // Timer between volleys in current burst
+    private double lockedBaseAngle = 0.0; // Locked aim angle for the trailing tail
 
     private double shieldAnimTimer = 0.0;
     private double shieldHitTimer = 0.0;
@@ -55,38 +56,40 @@ public class Boss extends Enemy {
         shieldAnimTimer += deltaTime * 4.0;
         if (shieldHitTimer > 0) shieldHitTimer -= deltaTime;
 
-        // Attack handling: 4-shot burst sequence per set, then 4.0s cooldown
+        // Attack handling: 3 rapid shots trailing like a tail per set, then 4.0s cooldown
         if (burstShotsRemaining > 0) {
             burstIntervalTimer -= deltaTime;
             if (burstIntervalTimer <= 0) {
-                fireSpreadBarrage(player, level);
+                fireSpreadBarrage(lockedBaseAngle, level);
                 burstShotsRemaining--;
                 if (burstShotsRemaining > 0) {
                     burstIntervalTimer = BURST_INTERVAL;
                 } else {
-                    cooldownTimer = SHOOT_COOLDOWN; // All 4 volleys fired -> begin 4.0s cooldown
+                    cooldownTimer = SHOOT_COOLDOWN; // Set finished -> start 4.0s cooldown
                 }
             }
         } else {
             cooldownTimer -= deltaTime;
             if (cooldownTimer <= 0) {
-                // Begin a new 4-volley burst set
-                fireSpreadBarrage(player, level);
-                burstShotsRemaining = BURST_COUNT_PER_SET - 1; // 3 remaining in this set
+                // Lock aim angle towards player for this 3-shot tail set
+                double centerX = getCenterX();
+                double centerY = getCenterY();
+                lockedBaseAngle = Math.atan2(player.getCenterY() - centerY, player.getCenterX() - centerX);
+
+                // Fire 1st shot of the tail
+                fireSpreadBarrage(lockedBaseAngle, level);
+                burstShotsRemaining = BURST_COUNT_PER_SET - 1; // 2 more shots to follow in tail
                 burstIntervalTimer = BURST_INTERVAL;
             }
         }
     }
 
     /**
-     * Fires a 5-way spread barrage of block-penetrating BossBullets simultaneously.
+     * Fires a 5-way spread barrage of block-penetrating BossBullets along the specified base angle.
      */
-    private void fireSpreadBarrage(Player player, Level level) {
+    private void fireSpreadBarrage(double baseAngle, Level level) {
         double centerX = getCenterX();
         double centerY = getCenterY();
-
-        // Calculate base angle pointing towards player
-        double baseAngle = Math.atan2(player.getCenterY() - centerY, player.getCenterX() - centerX);
 
         // 5-way spread angle offsets: -28°, -14°, 0°, +14°, +28°
         double[] angleOffsets = {-28.0, -14.0, 0.0, 14.0, 28.0};
@@ -102,8 +105,10 @@ public class Boss extends Enemy {
             level.addProjectile(bullet);
         }
 
-        // Muzzle energy flash & heavy cannon sound
-        ParticleSystem.getInstance().spawnMuzzleFlash(centerX + (facingRight ? 40 : -40), centerY);
+        // Muzzle energy flash along firing vector & heavy cannon sound
+        double muzzleX = centerX + Math.cos(baseAngle) * 36.0;
+        double muzzleY = centerY + Math.sin(baseAngle) * 20.0;
+        ParticleSystem.getInstance().spawnMuzzleFlash(muzzleX, muzzleY);
         SoundManager.getInstance().playEnemyShoot();
     }
 
