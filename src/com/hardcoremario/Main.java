@@ -11,7 +11,7 @@ import javax.swing.*;
 /**
  * Main entry point for the Hardcore Mario game application.
  * Project: Object-Oriented Programming (OOP)
- * Student: ปฏิพล จันทร์บุญ (6504062636187 ตอน 3)
+ * Student: ปฏิพล จันทร์บุญ (6804062612102 ตอน 3)
  */
 public class Main {
 

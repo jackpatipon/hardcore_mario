@@ -323,33 +323,17 @@ public class GamePanel extends JPanel {
 
         int screenW = getWidth();
         int screenH = getHeight();
-        double scale = 1.6;
-        int bgW = (int) (screenW * scale);
-        int bgH = (int) (screenH * scale);
+        int bgH = bg.getHeight();
+        int drawW = (bgH > 0) ? (int) Math.round((double) bg.getWidth() * screenH / bgH) : bg.getWidth();
 
-        if (gameState == GameState.TITLE) {
-            // Center the panoramic backdrop behind the title screen menu
-            int drawX = -(bgW - screenW) / 2;
-            int drawY = -(bgH - screenH) / 2;
-            g.drawImage(bg, drawX, drawY, bgW, bgH, null);
-            return;
+        // Seamless horizontal parallax scrolling (50% speed)
+        double scrollSpeed = 0.5;
+        int offsetX = (int) (-(camX * scrollSpeed) % drawW);
+        while (offsetX > 0) offsetX -= drawW;
+        while (offsetX <= -drawW) offsetX += drawW;
+
+        for (int x = offsetX; x < screenW; x += drawW) {
+            g.drawImage(bg, x, 0, drawW, screenH, null);
         }
-
-        // Gameplay: Smooth level-mapped parallax (no repeating seams, full vertical & horizontal depth)
-        double minCamX = (camera != null) ? camera.getMinX() : 0.0;
-        double maxCamX = (camera != null) ? Math.max(minCamX, camera.getMaxX() - screenW) : (double) screenW;
-        double minCamY = (camera != null) ? camera.getMinY() : 0.0;
-        double maxCamY = (camera != null) ? Math.max(minCamY, camera.getMaxY() - screenH) : (double) screenH;
-
-        double progressX = (maxCamX > minCamX) ? (camX - minCamX) / (maxCamX - minCamX) : 0.5;
-        double progressY = (maxCamY > minCamY) ? (camY - minCamY) / (maxCamY - minCamY) : 0.5;
-
-        progressX = Math.max(0.0, Math.min(1.0, progressX));
-        progressY = Math.max(0.0, Math.min(1.0, progressY));
-
-        int drawX = (int) (-progressX * (bgW - screenW));
-        int drawY = (int) (-progressY * (bgH - screenH));
-
-        g.drawImage(bg, drawX, drawY, bgW, bgH, null);
     }
 }
