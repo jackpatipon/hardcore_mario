@@ -3,6 +3,7 @@ package com.hardcoremario.view;
 import com.hardcoremario.core.AssetManager;
 import com.hardcoremario.core.GameSettings;
 import com.hardcoremario.core.InputHandler;
+import com.hardcoremario.model.entity.Boss;
 import com.hardcoremario.model.entity.Player;
 import com.hardcoremario.model.world.Level;
 import com.hardcoremario.util.Constants;
@@ -143,12 +144,19 @@ public class HUD {
         g.setFont(new Font("Impact", Font.PLAIN, 15));
         g.drawString(diff.getCodeName(), Constants.SCREEN_WIDTH / 2 + 18, 35);
 
+        // Boss Bar (if Boss is present and alive)
+        Boss boss = level.getBoss();
+        boolean bossActive = (boss != null && !boss.isDead());
+        if (bossActive) {
+            renderBossBar(g, boss, level);
+        }
+
         // Debug Mode Banner (Top Center)
         if (player.isDebugMode()) {
             int dbgW = 340;
             int dbgH = 26;
             int dbgX = (Constants.SCREEN_WIDTH - dbgW) / 2;
-            int dbgY = 52;
+            int dbgY = bossActive ? 104 : 52;
             g.setColor(new Color(8, 24, 38, 235));
             g.fillRoundRect(dbgX, dbgY, dbgW, dbgH, 8, 8);
             g.setColor(new Color(0, 255, 255, 210));
@@ -185,6 +193,82 @@ public class HUD {
         if (!level.isMissionComplete()) {
             renderCrosshair(g, input.getMouseX(), input.getMouseY());
         }
+    }
+
+    private void renderBossBar(Graphics2D g, Boss boss, Level level) {
+        int barW = 460;
+        int barH = 20;
+        int boxW = barW + 28;
+        int boxH = 46;
+        int boxX = (Constants.SCREEN_WIDTH - boxW) / 2;
+        int boxY = 52;
+
+        // Background panel
+        g.setColor(new Color(10, 14, 24, 230));
+        g.fillRoundRect(boxX, boxY, boxW, boxH, 10, 10);
+
+        boolean shielded = boss.isShielded();
+        int activeCores = level.getActiveBossCoreCount();
+
+        // Border
+        g.setStroke(new BasicStroke(2.0f));
+        if (shielded) {
+            g.setColor(new Color(0, 220, 255, 220));
+        } else {
+            g.setColor(new Color(255, 70, 70, 240));
+        }
+        g.drawRoundRect(boxX, boxY, boxW, boxH, 10, 10);
+
+        // Header Title / Label
+        g.setFont(new Font("Impact", Font.PLAIN, 15));
+        FontMetrics fm = g.getFontMetrics();
+        String title = "TITAN OVERLORD - APEX B.O.S.S.";
+        g.setColor(Color.WHITE);
+        g.drawString(title, boxX + 14, boxY + 17);
+
+        // Shield status / HP text on right
+        g.setFont(new Font("Arial", Font.BOLD, 12));
+        fm = g.getFontMetrics();
+        String statusText;
+        if (shielded) {
+            statusText = "SHIELD: " + activeCores + " CORES ACTIVE (IMMUNE)";
+            g.setColor(new Color(0, 255, 255));
+        } else {
+            statusText = "VULNERABLE! HP: " + boss.getHp() + " / " + boss.getMaxHp();
+            g.setColor(new Color(255, 120, 120));
+        }
+        g.drawString(statusText, boxX + boxW - 14 - fm.stringWidth(statusText), boxY + 17);
+
+        // Progress Bar Track
+        int pBarX = boxX + 14;
+        int pBarY = boxY + 23;
+        g.setColor(new Color(25, 30, 42));
+        g.fillRoundRect(pBarX, pBarY, barW, barH - 4, 6, 6);
+
+        // Fill bar
+        double ratio = Math.max(0.0, Math.min(1.0, (double) boss.getHp() / boss.getMaxHp()));
+        int fillW = (int) Math.round(barW * ratio);
+        if (fillW > 0) {
+            if (shielded) {
+                GradientPaint barGrad = new GradientPaint(
+                    pBarX, pBarY, new Color(0, 170, 255),
+                    pBarX + fillW, pBarY, new Color(0, 255, 220)
+                );
+                g.setPaint(barGrad);
+            } else {
+                GradientPaint barGrad = new GradientPaint(
+                    pBarX, pBarY, new Color(240, 50, 50),
+                    pBarX + fillW, pBarY, new Color(255, 190, 30)
+                );
+                g.setPaint(barGrad);
+            }
+            g.fillRoundRect(pBarX, pBarY, fillW, barH - 4, 6, 6);
+        }
+
+        // Inner border for bar
+        g.setStroke(new BasicStroke(1.0f));
+        g.setColor(new Color(255, 255, 255, 60));
+        g.drawRoundRect(pBarX, pBarY, barW, barH - 4, 6, 6);
     }
 
     private void renderCrosshair(Graphics2D g, int mx, int my) {
@@ -286,7 +370,7 @@ public class HUD {
 
         g.setFont(new Font("Arial", Font.PLAIN, 12));
         g.setColor(new Color(175, 195, 215));
-        String subEng = "All 3 Stages Cleared — Syndicate Perimeter Fully Breached!";
+        String subEng = "All 4 Stages Cleared — Syndicate Perimeter Fully Breached!";
         fm = g.getFontMetrics();
         g.drawString(subEng, cardX + (cardW - fm.stringWidth(subEng)) / 2, cardY + 110);
 
@@ -312,7 +396,7 @@ public class HUD {
 
         // Card 1: Clear Status
         renderStatCard(g, cardLeftX, cardRow1Y, cardBoxW, cardBoxH,
-            "STATUS", "3 / 3 STAGES CLEARED", "100% Complete (จบครบทุกด่าน)", new Color(255, 215, 0));
+            "STATUS", "4 / 4 STAGES CLEARED", "100% Complete (จบครบทุกด่าน)", new Color(255, 215, 0));
 
         // Card 2: Eliminations
         renderStatCard(g, cardRightX, cardRow1Y, cardBoxW, cardBoxH,

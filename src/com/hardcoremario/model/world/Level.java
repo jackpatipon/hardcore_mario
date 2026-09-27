@@ -5,10 +5,13 @@ import com.hardcoremario.core.InputHandler;
 import com.hardcoremario.core.Renderable;
 import com.hardcoremario.core.SoundManager;
 import com.hardcoremario.core.Updatable;
+import com.hardcoremario.model.entity.Boss;
+import com.hardcoremario.model.entity.BossCore;
 import com.hardcoremario.model.entity.Enemy;
 import com.hardcoremario.model.entity.Guard;
 import com.hardcoremario.model.entity.Player;
 import com.hardcoremario.model.item.Item;
+import com.hardcoremario.model.projectile.BossBullet;
 import com.hardcoremario.model.projectile.EnemyBullet;
 import com.hardcoremario.model.projectile.PlayerBullet;
 import com.hardcoremario.model.projectile.Projectile;
@@ -40,6 +43,8 @@ public class Level implements Updatable, Renderable {
     private final List<Enemy> enemies = new ArrayList<>();
     private final List<Projectile> projectiles = new ArrayList<>();
     private final List<Item> items = new ArrayList<>();
+    private Boss boss = null;
+    private final List<BossCore> bossCores = new ArrayList<>();
 
     private boolean missionComplete = false;
     private boolean gameOver = false;
@@ -57,6 +62,8 @@ public class Level implements Updatable, Renderable {
         enemies.clear();
         projectiles.clear();
         items.clear();
+        bossCores.clear();
+        boss = null;
         ParticleSystem.getInstance().clear();
         missionComplete = false;
         gameOver = false;
@@ -79,6 +86,11 @@ public class Level implements Updatable, Renderable {
         this.tiles.addAll(data.tiles);
         this.enemies.addAll(data.enemies);
         this.items.addAll(data.items);
+        this.boss = data.boss;
+        this.bossCores.addAll(data.bossCores);
+        if (this.boss != null) {
+            this.boss.setLevel(this);
+        }
 
         statusMessage = "STAGE " + currentStage + " START!";
         SoundManager.getInstance().playStageMusic(currentStage);
@@ -139,7 +151,20 @@ public class Level implements Updatable, Renderable {
             enemy.update(deltaTime);
             if (enemy instanceof Guard) {
                 ((Guard) enemy).updatePhysicsAndCollisions(this, deltaTime);
+            } else if (enemy instanceof Boss) {
+                ((Boss) enemy).updatePhysicsAndCollisions(this, deltaTime);
             }
+        }
+
+        // 2b. Update Boss Cores
+        Iterator<BossCore> coreIt = bossCores.iterator();
+        while (coreIt.hasNext()) {
+            BossCore core = coreIt.next();
+            if (core.isDead() || !core.isActive()) {
+                coreIt.remove();
+                continue;
+            }
+            core.update(deltaTime);
         }
 
         // 3. Update Items (Gravity, Physics, and Spike Collisions)
@@ -175,41 +200,60 @@ public class Level implements Updatable, Renderable {
 
             // A. Projectile vs Tiles
             boolean hitTile = false;
-            for (Tile tile : tiles) {
-                if (!tile.isActive()) continue;
+            // BossBullet penetrates ALL blocks/tiles!
+            if (!(p instanceof BossBullet)) {
+                for (Tile tile : tiles) {
+                    if (!tile.isActive()) continue;
 
-                if (tile.isSolid() && p.collidesWith(tile)) {
-                    hitTile = true;
+                    if (tile.isSolid() && p.collidesWith(tile)) {
+                        hitTile = true;
 
-                    // If it's a PlayerBullet hitting a Breakable Block, damage and potentially destroy it!
-                    if (p instanceof PlayerBullet && tile.isBreakable()) {
-                        tile.takeDamage(p.getDamage());
-                        SoundManager.getInstance().playHit();
-                    } else {
-                        ParticleSystem.getInstance().spawnSparks(p.getX(), p.getY(), Color.YELLOW);
-                    }
-                    break;
-                }
-            }
-            if (hitTile) {
-                p.setActive(false);
-                projIt.remove();
-                continue;
-            }
-
-            // B. PlayerBullet vs Enemies
-            if (p instanceof PlayerBullet) {
-                boolean hitEnemy = false;
-                for (Enemy enemy : enemies) {
-                    if (!enemy.isDead() && p.collidesWith(enemy)) {
-                        enemy.takeDamage(p.getDamage());
-                        ParticleSystem.getInstance().spawnSparks(p.getX(), p.getY(), Color.RED);
-                        SoundManager.getInstance().playHit();
-                        hitEnemy = true;
+                        // If it's a PlayerBullet hitting a Breakable Block, damage and potentially destroy it!
+                        if (p instanceof PlayerBullet && tile.isBreakable()) {
+                            tile.takeDamage(p.getDamage());
+                            SoundManager.getInstance().playHit();
+                        } else {
+                            ParticleSystem.getInstance().spawnSparks(p.getX(), p.getY(), Color.YELLOW);
+                        }
                         break;
                     }
                 }
-                if (hitEnemy) {
+                if (hitTile) {
+                    p.setActive(false);
+                    projIt.remove();
+                    continue;
+                }
+            }
+
+            // B. PlayerBullet vs Enemies and Boss Cores
+            if (p instanceof PlayerBullet) {
+                boolean hitTarget = false;
+
+                // Check collision with Boss Cores first
+                for (BossCore core : bossCores) {
+                    if (!core.isDead() && core.isActive() && p.collidesWith(core)) {
+                        core.takeDamage(p.getDamage());
+                        hitTarget = true;
+                        break;
+                    }
+                }
+
+                // Check collision with Enemies / Boss
+                if (!hitTarget) {
+                    for (Enemy enemy : enemies) {
+                        if (!enemy.isDead() && p.collidesWith(enemy)) {
+                            enemy.takeDamage(p.getDamage());
+                            if (!(enemy instanceof Boss && ((Boss) enemy).isShielded())) {
+                                ParticleSystem.getInstance().spawnSparks(p.getX(), p.getY(), Color.RED);
+                            }
+                            SoundManager.getInstance().playHit();
+                            hitTarget = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (hitTarget) {
                     p.setActive(false);
                     projIt.remove();
                     continue;
@@ -231,6 +275,14 @@ public class Level implements Updatable, Renderable {
 
         // Remove destroyed tiles
         tiles.removeIf(t -> !t.isActive());
+
+        // Check Boss Defeat (Immediate Victory on defeating Boss)
+        if (boss != null && boss.isDead() && !missionComplete) {
+            missionComplete = true;
+            SoundManager.getInstance().playVictory();
+            ParticleSystem.getInstance().spawnSparks(player.getCenterX(), player.getCenterY(), Color.YELLOW);
+            ParticleSystem.getInstance().spawnSparks(player.getCenterX(), player.getCenterY(), Color.CYAN);
+        }
 
         // 5. Check Level Exit / Stage Progression
         if (!missionComplete) {
@@ -273,6 +325,13 @@ public class Level implements Updatable, Renderable {
         for (Item item : items) {
             if (item.isActive()) {
                 item.render(g, offsetX, offsetY);
+            }
+        }
+
+        // Render Boss Cores
+        for (BossCore core : bossCores) {
+            if (core.isActive() && !core.isDead()) {
+                core.render(g, offsetX, offsetY);
             }
         }
 
@@ -331,4 +390,13 @@ public class Level implements Updatable, Renderable {
     public int getCurrentStage() { return currentStage; }
     public int getInitialStage() { return initialStage; }
     public void setInitialStage(int stage) { this.initialStage = stage; }
+    public Boss getBoss() { return boss; }
+    public List<BossCore> getBossCores() { return bossCores; }
+    public int getActiveBossCoreCount() {
+        int count = 0;
+        for (BossCore c : bossCores) {
+            if (c.isActive() && !c.isDead()) count++;
+        }
+        return count;
+    }
 }

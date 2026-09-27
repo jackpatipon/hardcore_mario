@@ -1,8 +1,12 @@
 package com.hardcoremario.model.world;
 
+import com.hardcoremario.model.entity.Boss;
+import com.hardcoremario.model.entity.BossCore;
+import com.hardcoremario.model.entity.Enemy;
 import com.hardcoremario.model.entity.Guard;
 import com.hardcoremario.model.entity.Player;
 import com.hardcoremario.model.item.HealthPack;
+import com.hardcoremario.model.item.Item;
 import com.hardcoremario.util.Constants;
 import java.awt.Color;
 import java.io.File;
@@ -30,8 +34,10 @@ public class DrawioLevelLoader {
         public double playerSpawnX = 520.0;
         public double playerSpawnY = 1060.0;
         public final List<Tile> tiles = new ArrayList<>();
-        public final List<Guard> enemies = new ArrayList<>();
-        public final List<HealthPack> items = new ArrayList<>();
+        public final List<Enemy> enemies = new ArrayList<>();
+        public final List<Item> items = new ArrayList<>();
+        public Boss boss = null;
+        public final List<BossCore> bossCores = new ArrayList<>();
     }
 
     public static File findStageFile(int stage) {
@@ -142,6 +148,28 @@ public class DrawioLevelLoader {
                     minY = Math.min(minY, gameY);
                     maxX = Math.max(maxX, gameX + gameW);
                     maxY = Math.max(maxY, gameY + gameH);
+                } else if ((style.contains("shape=actor") && !style.contains("shape=umlActor")) || value.equalsIgnoreCase("boss")) {
+                    // Boss Enemy
+                    int bossW = (int) Math.max(96, gameW);
+                    int bossH = (int) Math.max(96, gameH);
+                    Boss boss = new Boss(gameX, gameY, bossW, bossH);
+                    data.enemies.add(boss);
+                    data.boss = boss;
+                    minX = Math.min(minX, gameX);
+                    minY = Math.min(minY, gameY);
+                    maxX = Math.max(maxX, gameX + bossW);
+                    maxY = Math.max(maxY, gameY + bossH);
+                } else if (style.contains("shape=sumEllipse") || value.toLowerCase().contains("core")) {
+                    // Boss Protection Core
+                    double centerX = gameX + gameW / 2.0;
+                    double centerY = gameY + gameH / 2.0;
+                    int coreSize = 44;
+                    BossCore core = new BossCore(centerX - coreSize / 2.0, centerY - coreSize / 2.0, coreSize, coreSize);
+                    data.bossCores.add(core);
+                    minX = Math.min(minX, centerX - coreSize / 2.0);
+                    minY = Math.min(minY, centerY - coreSize / 2.0);
+                    maxX = Math.max(maxX, centerX + coreSize / 2.0);
+                    maxY = Math.max(maxY, centerY + coreSize / 2.0);
                 } else if (value.equals("exit") || style.contains("shape=loopLimit")) {
                     data.tiles.add(new Tile(gameX, gameY, (int) gameW, (int) gameH, Tile.TileType.EXIT));
                     minX = Math.min(minX, gameX);
@@ -210,13 +238,18 @@ public class DrawioLevelLoader {
             // Items that are part of decorative multi-item patterns (e.g. Heart shape in Stage 3)
             // float in place so the decorative design does not collapse.
             // All isolated gameplay items respond to gravity and will fall when the block below them breaks.
-            for (HealthPack item : data.items) {
-                for (HealthPack other : data.items) {
-                    if (item == other) continue;
-                    // Two items in the same vertical column (within 25px) form a decorative pattern
-                    if (Math.abs(item.getCenterX() - other.getCenterX()) < 25) {
-                        item.setFloating(true);
-                        other.setFloating(true);
+            for (Item it : data.items) {
+                if (it instanceof HealthPack) {
+                    HealthPack item = (HealthPack) it;
+                    for (Item ot : data.items) {
+                        if (ot instanceof HealthPack && item != ot) {
+                            HealthPack other = (HealthPack) ot;
+                            // Two items in the same vertical column (within 25px) form a decorative pattern
+                            if (Math.abs(item.getCenterX() - other.getCenterX()) < 25) {
+                                item.setFloating(true);
+                                other.setFloating(true);
+                            }
+                        }
                     }
                 }
             }
@@ -241,10 +274,17 @@ public class DrawioLevelLoader {
             data.width = boundMaxX - boundMinX;
             data.height = boundMaxY - boundMinY;
 
+            if (data.boss != null) {
+                for (BossCore core : data.bossCores) {
+                    core.setTargetBoss(data.boss);
+                }
+            }
+
             System.out.println("Loaded Level from " + xmlFilePath + ": " +
                                data.tiles.size() + " tiles, " +
                                data.enemies.size() + " enemies, " +
-                               data.items.size() + " items.");
+                               data.items.size() + " items, " +
+                               data.bossCores.size() + " boss cores, boss=" + (data.boss != null));
             return data;
 
         } catch (Exception e) {

@@ -49,6 +49,11 @@ public class AssetManager {
         // Bullets
         loadImage("bullet_player", "assets/projectiles/bullet_player.png");
         loadImage("bullet_enemy", "assets/projectiles/bullet_enemy.png");
+        loadImage("bullet_boss", "assets/projectiles/bullet_boss.png");
+
+        // Boss & Cores
+        loadImage("boss", "assets/characters/boss/boss.png");
+        loadImage("boss_core", "assets/characters/boss/boss_core.png");
 
         // Items
         loadImage("health_pack", "assets/items/health_pack.png");

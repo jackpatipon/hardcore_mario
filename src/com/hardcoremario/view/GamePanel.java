@@ -118,6 +118,10 @@ public class GamePanel extends JPanel {
             level.loadStage(3);
             camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
             camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
+        } else if (inputHandler.consumeF4()) {
+            level.loadStage(4);
+            camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
+            camera.snapTo(level.getPlayer().getCenterX(), level.getPlayer().getCenterY());
         }
 
         // Toggle Debug Mode (F12: Noclip, God Mode, Unlimited Ammo)
