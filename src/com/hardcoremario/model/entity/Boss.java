@@ -114,7 +114,7 @@ public class Boss extends Enemy {
         double muzzleX = centerX + Math.cos(baseAngle) * 36.0;
         double muzzleY = centerY + Math.sin(baseAngle) * 20.0;
         ParticleSystem.getInstance().spawnMuzzleFlash(muzzleX, muzzleY);
-        SoundManager.getInstance().playEnemyShoot();
+        SoundManager.getInstance().playBossShoot();
     }
 
     @Override
@@ -197,12 +197,12 @@ public class Boss extends Enemy {
             // Invulnerable while any core remains intact!
             shieldHitTimer = 0.25;
             ParticleSystem.getInstance().spawnSparks(getCenterX(), getCenterY(), Color.CYAN);
-            SoundManager.getInstance().playHit();
+            SoundManager.getInstance().playBossShield();
             return;
         }
         super.takeDamage(amount);
         ParticleSystem.getInstance().spawnSparks(getCenterX(), getCenterY(), Color.RED);
-        SoundManager.getInstance().playHit();
+        SoundManager.getInstance().playBossHit();
     }
 
     @Override
@@ -211,6 +211,7 @@ public class Boss extends Enemy {
         ParticleSystem.getInstance().spawnSparks(getCenterX(), getCenterY(), Color.YELLOW);
         ParticleSystem.getInstance().spawnSparks(getCenterX(), getCenterY(), Color.RED);
         ParticleSystem.getInstance().spawnSparks(getCenterX(), getCenterY(), Color.CYAN);
+        SoundManager.getInstance().playBossDeath();
         SoundManager.getInstance().playVictory();
     }
 

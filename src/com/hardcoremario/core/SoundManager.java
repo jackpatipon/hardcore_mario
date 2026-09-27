@@ -52,6 +52,14 @@ public class SoundManager {
         loadSFX("reload",       "assets/audio/sfx/reload.wav", 2);
         loadSFX("gameover",     "assets/audio/sfx/gameover.wav", 1);
         loadSFX("victory",      "assets/audio/sfx/victory.wav", 1);
+
+        // Boss & Core Sound Effects
+        loadSFX("boss_shoot",   "assets/audio/sfx/boss_shoot.wav", 4);
+        loadSFX("boss_hit",     "assets/audio/sfx/boss_hit.wav", 3);
+        loadSFX("boss_shield",  "assets/audio/sfx/boss_shield.wav", 3);
+        loadSFX("boss_death",   "assets/audio/sfx/boss_death.wav", 1);
+        loadSFX("core_hit",     "assets/audio/sfx/core_hit.wav", 4);
+        loadSFX("core_destroy", "assets/audio/sfx/core_destroy.wav", 2);
     }
 
     /**
@@ -160,6 +168,54 @@ public class SoundManager {
             playSFX("gameover");
         } else {
             fallbackSynthGameOver();
+        }
+    }
+
+    public void playBossShoot() {
+        if (sfxPools.containsKey("boss_shoot")) {
+            playSFX("boss_shoot");
+        } else {
+            fallbackSynthBossShoot();
+        }
+    }
+
+    public void playBossHit() {
+        if (sfxPools.containsKey("boss_hit")) {
+            playSFX("boss_hit");
+        } else {
+            fallbackSynthBossHit();
+        }
+    }
+
+    public void playBossShield() {
+        if (sfxPools.containsKey("boss_shield")) {
+            playSFX("boss_shield");
+        } else {
+            fallbackSynthBossShield();
+        }
+    }
+
+    public void playBossDeath() {
+        if (sfxPools.containsKey("boss_death")) {
+            playSFX("boss_death");
+        } else {
+            fallbackSynthBossDeath();
+        }
+    }
+
+    public void playCoreHit() {
+        if (sfxPools.containsKey("core_hit")) {
+            playSFX("core_hit");
+        } else {
+            fallbackSynthCoreHit();
+        }
+    }
+
+    public void playCoreDestroy() {
+        if (sfxPools.containsKey("core_destroy")) {
+            playSFX("core_destroy");
+        } else {
+            fallbackSynthCoreDestroy();
         }
     }
 
@@ -565,6 +621,79 @@ public class SoundManager {
             double t = (double) i / numSamples;
             double sample = Math.sin(2.0 * Math.PI * freq * i / sampleRate);
             buffer[i] = (byte) (sample * (1.0 - t * 0.3) * 90.0);
+        }
+        playTone(buffer, new AudioFormat(sampleRate, 8, 1, true, false));
+    }
+
+    private void fallbackSynthBossShoot() {
+        int sampleRate = 22050;
+        int numSamples = (sampleRate * 200) / 1000;
+        byte[] buffer = new byte[numSamples];
+        for (int i = 0; i < numSamples; i++) {
+            double t = (double) i / numSamples;
+            double freq = 180.0 * Math.exp(-t * 6.0) + 40.0;
+            double tone = Math.sin(2.0 * Math.PI * freq * i / sampleRate);
+            double noise = (Math.random() * 2.0 - 1.0) * Math.exp(-t * 10.0);
+            buffer[i] = (byte) ((tone * 0.6 + noise * 0.4) * (1.0 - t) * 95.0);
+        }
+        playTone(buffer, new AudioFormat(sampleRate, 8, 1, true, false));
+    }
+
+    private void fallbackSynthBossHit() {
+        int sampleRate = 22050;
+        int numSamples = (sampleRate * 180) / 1000;
+        byte[] buffer = new byte[numSamples];
+        for (int i = 0; i < numSamples; i++) {
+            double t = (double) i / numSamples;
+            double m1 = Math.sin(2.0 * Math.PI * 220.0 * i / sampleRate);
+            double m2 = Math.sin(2.0 * Math.PI * 440.0 * i / sampleRate) * 0.6;
+            buffer[i] = (byte) ((m1 + m2) * Math.exp(-t * 8.0) * 85.0);
+        }
+        playTone(buffer, new AudioFormat(sampleRate, 8, 1, true, false));
+    }
+
+    private void fallbackSynthBossShield() {
+        int sampleRate = 22050;
+        int numSamples = (sampleRate * 160) / 1000;
+        byte[] buffer = new byte[numSamples];
+        for (int i = 0; i < numSamples; i++) {
+            double t = (double) i / numSamples;
+            double freq = 1400.0 + 1000.0 * t;
+            double sample = Math.sin(2.0 * Math.PI * freq * i / sampleRate);
+            buffer[i] = (byte) (sample * Math.exp(-t * 7.0) * 80.0);
+        }
+        playTone(buffer, new AudioFormat(sampleRate, 8, 1, true, false));
+    }
+
+    private void fallbackSynthBossDeath() {
+        new Thread(() -> {
+            fallbackSynthHit();
+            try { Thread.sleep(120); } catch (Exception ignored) {}
+            fallbackSynthGameOver();
+        }).start();
+    }
+
+    private void fallbackSynthCoreHit() {
+        int sampleRate = 22050;
+        int numSamples = (sampleRate * 120) / 1000;
+        byte[] buffer = new byte[numSamples];
+        for (int i = 0; i < numSamples; i++) {
+            double t = (double) i / numSamples;
+            double sample = Math.sin(2.0 * Math.PI * 1200.0 * i / sampleRate);
+            buffer[i] = (byte) (sample * Math.exp(-t * 12.0) * 75.0);
+        }
+        playTone(buffer, new AudioFormat(sampleRate, 8, 1, true, false));
+    }
+
+    private void fallbackSynthCoreDestroy() {
+        int sampleRate = 22050;
+        int numSamples = (sampleRate * 250) / 1000;
+        byte[] buffer = new byte[numSamples];
+        for (int i = 0; i < numSamples; i++) {
+            double t = (double) i / numSamples;
+            double tone = Math.sin(2.0 * Math.PI * (1600.0 * Math.exp(-t * 8.0) + 100.0) * i / sampleRate);
+            double noise = (Math.random() * 2.0 - 1.0) * Math.exp(-t * 6.0);
+            buffer[i] = (byte) ((tone * 0.5 + noise * 0.5) * (1.0 - t) * 90.0);
         }
         playTone(buffer, new AudioFormat(sampleRate, 8, 1, true, false));
     }

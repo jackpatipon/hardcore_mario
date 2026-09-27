@@ -44,7 +44,7 @@ public class BossCore extends LivingEntity {
         if (isDead()) return;
         currentHp = Math.max(0, currentHp - amount);
         ParticleSystem.getInstance().spawnSparks(getCenterX(), getCenterY(), Color.CYAN);
-        SoundManager.getInstance().playHit();
+        SoundManager.getInstance().playCoreHit();
         if (currentHp <= 0) {
             onDeath();
         }
@@ -53,7 +53,7 @@ public class BossCore extends LivingEntity {
     @Override
     protected void onDeath() {
         setActive(false);
-        SoundManager.getInstance().playHit();
+        SoundManager.getInstance().playCoreDestroy();
         // Massive energy explosion when core is shattered
         ParticleSystem.getInstance().spawnSparks(getCenterX(), getCenterY(), Color.CYAN);
         ParticleSystem.getInstance().spawnSparks(getCenterX(), getCenterY(), Color.WHITE);

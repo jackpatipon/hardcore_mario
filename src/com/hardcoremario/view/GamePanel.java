@@ -298,8 +298,13 @@ public class GamePanel extends JPanel {
 
     private void renderBackgrounds(Graphics2D g, double camX, double camY) {
         AssetManager am = AssetManager.getInstance();
-        BufferedImage bgFar = am.getImage("bg_far");
-        BufferedImage bgMain = am.getImage("bg_main");
+        int currentStage = (level != null) ? level.getCurrentStage() : 1;
+
+        BufferedImage bgFar = am.getImage("bg_stage" + currentStage + "_far");
+        if (bgFar == null) bgFar = am.getImage("bg_far");
+
+        BufferedImage bgMain = am.getImage("bg_stage" + currentStage);
+        if (bgMain == null) bgMain = am.getImage("bg_main");
 
         // Distant background scrolls at 20% speed
         if (bgFar != null) {
