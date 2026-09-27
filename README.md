@@ -253,6 +253,6 @@ java -cp bin com.hardcoremario.Main
 ## 👨‍💻 ผู้จัดทำ (Author)
 
 - **ผู้จัดทำ:** ปฏิพล จันทร์บุญ
-- **รหัสนักศึกษา:** 6804062612102 (ตอน 3)
+- **รหัสนักศึกษา:** 6504062636187 (ตอน 3)
 - **รายวิชา:** Object-Oriented Programming (OOP)
 - **GitHub:** [@jackpatipon](https://github.com/jackpatipon)
