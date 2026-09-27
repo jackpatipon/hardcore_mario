@@ -56,12 +56,21 @@ public class Player extends LivingEntity {
 
         // 2. Crouch handling (lowers head hitbox downwards towards feet)
         boolean wantsCrouch = input.isCrouch();
-        if (wantsCrouch != crouching) {
-            crouching = wantsCrouch;
+        if (wantsCrouch && !crouching) {
+            crouching = true;
             int oldHeight = this.height;
-            this.height = crouching ? Constants.PLAYER_CROUCH_HEIGHT : Constants.PLAYER_HEIGHT;
+            this.height = Constants.PLAYER_CROUCH_HEIGHT;
             // Shift Y downwards so the head ducks down while feet stay grounded / aligned
             position.setY(position.getY() + (oldHeight - this.height));
+        } else if (!wantsCrouch && crouching) {
+            // Only stand up if there is sufficient headroom (no solid block overhead)
+            if (canStandUp(level)) {
+                crouching = false;
+                int oldHeight = this.height;
+                this.height = Constants.PLAYER_HEIGHT;
+                // Shift Y upwards so the head raises while feet stay grounded / aligned
+                position.setY(position.getY() - (this.height - oldHeight));
+            }
         }
 
         // 3. Horizontal movement
@@ -75,7 +84,10 @@ public class Player extends LivingEntity {
         // 4. Jump handling
         if (input.isJump() && isGrounded) {
             if (crouching) {
-                // If crouching on ground and player presses jump, uncrouch and jump
+                // If crouching on ground and player presses jump, uncrouch and jump only if clear overhead
+                if (!canStandUp(level)) {
+                    return; // Low ceiling blocks jump
+                }
                 crouching = false;
                 position.setY(position.getY() - (Constants.PLAYER_HEIGHT - this.height));
                 this.height = Constants.PLAYER_HEIGHT;
@@ -169,21 +181,39 @@ public class Player extends LivingEntity {
         velocity.setY(Math.min(velocity.getY() + Constants.GRAVITY * deltaTime, Constants.MAX_FALL_SPEED));
     }
 
+    /**
+     * Checks if there is sufficient headroom to stand up from crouching.
+     * Prevents clipping or warping into ceiling blocks when releasing crouch under low structures.
+     */
+    public boolean canStandUp(Level level) {
+        if (!crouching) return true;
+        double standY = position.getY() - (Constants.PLAYER_HEIGHT - this.height);
+        Rectangle2D.Double standBox = new Rectangle2D.Double(position.getX(), standY, width, Constants.PLAYER_HEIGHT);
+        for (Tile tile : level.getTiles()) {
+            if (!tile.isSolid() || !tile.isActive()) continue;
+            if (standBox.intersects(tile.getHitbox())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public void updatePhysicsAndCollisions(Level level, double deltaTime) {
         // Move X and resolve solid tile collisions
         position.setX(position.getX() + velocity.getX() * deltaTime);
         checkTileCollisionsX(level);
 
         // Move Y and resolve solid tile collisions
+        double prevY = position.getY();
         position.setY(position.getY() + velocity.getY() * deltaTime);
         isGrounded = false;
-        checkTileCollisionsY(level);
+        checkTileCollisionsY(level, prevY);
     }
 
     private void checkTileCollisionsX(Level level) {
         Rectangle2D.Double hb = getHitbox();
         for (Tile tile : level.getTiles()) {
-            if (!tile.isSolid()) continue;
+            if (!tile.isSolid() || !tile.isActive()) continue;
             if (hb.intersects(tile.getHitbox())) {
                 if (velocity.getX() > 0) {
                     position.setX(tile.getX() - width);
@@ -196,18 +226,39 @@ public class Player extends LivingEntity {
         }
     }
 
-    private void checkTileCollisionsY(Level level) {
+    private void checkTileCollisionsY(Level level, double prevY) {
         Rectangle2D.Double hb = getHitbox();
         for (Tile tile : level.getTiles()) {
-            if (!tile.isSolid()) continue;
+            if (!tile.isSolid() || !tile.isActive()) continue;
             if (hb.intersects(tile.getHitbox())) {
-                if (velocity.getY() > 0) { // Falling onto ground
-                    position.setY(tile.getY() - height);
+                double tileTop = tile.getY();
+                double tileBottom = tile.getY() + tile.getHeight();
+                double prevBottom = prevY + height;
+
+                // 1. Landing on top of tile:
+                // Must be falling downwards or stationary AND feet were previously at or above the tile surface
+                if (velocity.getY() >= 0 && prevBottom <= tileTop + 14) {
+                    position.setY(tileTop - height);
                     velocity.setY(0);
                     isGrounded = true;
-                } else if (velocity.getY() < 0) { // Bumping head into ceiling
-                    position.setY(tile.getY() + tile.getHeight());
+                }
+                // 2. Head bumping into ceiling from below:
+                else if (velocity.getY() <= 0 || prevY >= tileBottom - 14) {
+                    position.setY(tileBottom);
                     velocity.setY(0);
+                }
+                // 3. Fallback based on shallowest penetration:
+                else {
+                    double overlapTop = (position.getY() + height) - tileTop;
+                    double overlapBottom = tileBottom - position.getY();
+                    if (overlapTop < overlapBottom && velocity.getY() >= 0) {
+                        position.setY(tileTop - height);
+                        velocity.setY(0);
+                        isGrounded = true;
+                    } else {
+                        position.setY(tileBottom);
+                        velocity.setY(0);
+                    }
                 }
                 hb = getHitbox();
             }
@@ -286,4 +337,5 @@ public class Player extends LivingEntity {
     public int getCurrentFrame() { return currentFrame; }
     public double getWalkAnimTimer() { return walkAnimTimer; }
     public boolean isMoving() { return Math.abs(velocity.getX()) > 10.0; }
+    public boolean isCrouching() { return crouching; }
 }
