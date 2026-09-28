@@ -3,7 +3,7 @@
 <div align="center">
 
 [![Latest Release](https://img.shields.io/github/v/release/jackpatipon/hardcore_mario?color=brightgreen&label=Official%20Release&style=for-the-badge&logo=github)](https://github.com/jackpatipon/hardcore_mario/releases/latest)
-[![Download Game](https://img.shields.io/badge/Download-Hardcore_Mario_v1.0_(ZIP)-blue?style=for-the-badge&logo=windows)](https://github.com/jackpatipon/hardcore_mario/releases/latest)
+[![Download Game](https://img.shields.io/badge/Download-Hardcore_Mario_v1.1.3_(ZIP)-blue?style=for-the-badge&logo=windows)](https://github.com/jackpatipon/hardcore_mario/releases/latest)
 ![Java](https://img.shields.io/badge/Java-21%20%7C%208+-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-Completed-brightgreen?style=for-the-badge)
@@ -23,7 +23,7 @@
 
 <p align="center">
   <b>2D Side-Scrolling Action Platformer ผสมผสานสไตล์ Metal Slug + Mario</b><br>
-  <i>"เมื่อโลกเห็ดไม่ใช่ความจริง... สู่มหากาพย์การแหกแล็บสุดดิบเถื่อนของหนูทดลองรหัส 6504062636187"</i>
+  <i>"เมื่อโลกเห็ดไม่ใช่ความจริง... สู่มหากาพย์การแหกแล็บสุดดิบเถื่อนของหนูทดลองรหัส 6804062612102"</i>
 </p>
 
 </div>
@@ -35,7 +35,7 @@
 ไม่ต้องติดตั้งโปรแกรมเขียนโค้ด ไม่ต้องมี VS Code เพียงดาวน์โหลดตัวเกมสำเร็จรูป:
 
 1. กดเข้าไปที่หน้าดาวน์โหลด: **[GitHub Releases ล่าสุด](https://github.com/jackpatipon/hardcore_mario/releases/latest)**
-2. คลิกดาวน์โหลดไฟล์ **`HardcoreMario_v1.0.zip`** (หรือไฟล์ **`HardcoreMario.jar`**)
+2. คลิกดาวน์โหลดไฟล์ **`HardcoreMario_v1.1.3.zip`** (หรือไฟล์ **`HardcoreMario.jar`**)
 3. คลิกขวาที่ไฟล์ ZIP เลือก **Extract All... (แตกไฟล์)**
 4. **ดับเบิลคลิกที่ไฟล์ `HardcoreMario.jar`** เพื่อเข้าสู่เกมได้ทันที!
    *(เครื่องต้องมี Java Runtime / JRE 8 ขึ้นไป)*

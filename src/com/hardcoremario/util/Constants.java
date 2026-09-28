@@ -5,6 +5,7 @@ public final class Constants {
 
     // Window & Display
     public static final String GAME_TITLE = "Hardcore Mario (มาริโอ้เถื่อน) - Apex Escape";
+    public static final String GAME_VERSION = "v1.1.3";
     public static final int SCREEN_WIDTH = 1024;
     public static final int SCREEN_HEIGHT = 640;
     public static final int TARGET_FPS = 60;

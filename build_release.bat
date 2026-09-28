@@ -87,14 +87,37 @@ xcopy /s /e /q "assets" "release\assets\" >nul
 
 if exist "HOW_TO_PLAY.txt" copy /y "HOW_TO_PLAY.txt" "release\HOW_TO_PLAY.txt" >nul
 
-echo [4/4] Creating ZIP package for GitHub Release...
+:: Resolve version (Argument %1 -> Git Tag -> Constants.java -> fallback)
+set "VERSION="
+if not "%~1"=="" set "VERSION=%~1"
+
+if "%VERSION%"=="" (
+    for /f "tokens=*" %%g in ('git describe --tags --abbrev^=0 2^>nul') do (
+        if not "%%g"=="" set "VERSION=%%g"
+    )
+)
+
+if "%VERSION%"=="" (
+    for /f "tokens=3 delims=^=; " %%v in ('findstr "GAME_VERSION" src\com\hardcoremario\util\Constants.java 2^>nul') do (
+        set "RAW_VER=%%~v"
+        set "RAW_VER=!RAW_VER:"=!"
+        if not "!RAW_VER!"=="" set "VERSION=!RAW_VER!"
+    )
+)
+
+if "%VERSION%"=="" set "VERSION=v1.1.3"
+if not "%VERSION:~0,1%"=="v" set "VERSION=v%VERSION%"
+
+set "ZIP_NAME=HardcoreMario_%VERSION%.zip"
+
+echo [4/4] Creating ZIP package for GitHub Release (!ZIP_NAME!)...
 set "PS_CMD=powershell"
 if exist "%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" set "PS_CMD=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
-"%PS_CMD%" -NoProfile -Command "if (Test-Path 'HardcoreMario_v1.0.zip') { Remove-Item 'HardcoreMario_v1.0.zip' }; Compress-Archive -Path 'release\*' -DestinationPath 'HardcoreMario_v1.0.zip' -Force"
+"%PS_CMD%" -NoProfile -Command "if (Test-Path '!ZIP_NAME!') { Remove-Item '!ZIP_NAME!' }; Compress-Archive -Path 'release\*' -DestinationPath '!ZIP_NAME!' -Force"
 
 echo ========================================================
 echo [SUCCESS] Build Complete!
 echo.
 echo 1. Local play: Double-click 'HardcoreMario.jar' or 'run.bat'
-echo 2. For GitHub Release: 'HardcoreMario_v1.0.zip'
+echo 2. For GitHub Release: '!ZIP_NAME!'
 echo ========================================================

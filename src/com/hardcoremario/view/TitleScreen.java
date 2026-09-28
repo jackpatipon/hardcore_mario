@@ -472,7 +472,7 @@ public class TitleScreen {
         // Student Credits & Version
         g.setFont(new Font(THAI_FONT, Font.PLAIN, 11));
         g.setColor(new Color(110, 115, 130));
-        String studentInfo = "ผู้พัฒนา: ปฏิพล จันทร์บุญ (6804062612102 ตอน 3) • วิชา Object-Oriented Programming (OOP)";
+        String studentInfo = "ผู้พัฒนา: ปฏิพล จันทร์บุญ (6804062612102 ตอน 3) • วิชา Object-Oriented Programming (OOP) • " + Constants.GAME_VERSION;
         FontMetrics fmS = g.getFontMetrics();
         g.drawString(studentInfo, centerX - fmS.stringWidth(studentInfo) / 2, 606);
     }
