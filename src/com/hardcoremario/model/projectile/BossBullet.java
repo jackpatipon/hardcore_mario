@@ -17,6 +17,8 @@ public class BossBullet extends EnemyBullet {
         super(x, y, dirX, dirY, speed, damage, shooter);
         this.width = 20;
         this.height = 20;
+        // Infinite range: travels across the entire map without despawning until out of bounds
+        this.lifeTime = 999.0;
     }
 
     /**

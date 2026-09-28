@@ -193,6 +193,12 @@ public class Level implements Updatable, Renderable {
             Projectile p = projIt.next();
             p.update(deltaTime);
 
+            // Despawn projectiles only when they travel far beyond the map boundaries
+            if (p.getX() < minX - 800.0 || p.getX() > maxX + 800.0 ||
+                p.getY() < minY - 800.0 || p.getY() > maxY + 800.0) {
+                p.setActive(false);
+            }
+
             if (!p.isActive()) {
                 projIt.remove();
                 continue;
