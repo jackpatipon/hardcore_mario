@@ -15,6 +15,7 @@ import javax.swing.JPanel;
  * GamePanel handles the visual rendering pipeline, parallax backgrounds, and input events.
  */
 public class GamePanel extends JPanel {
+    private static final long serialVersionUID = 1L;
 
     public enum GameState {
         TITLE,

@@ -4,7 +4,6 @@ import com.hardcoremario.core.AssetManager;
 import com.hardcoremario.core.SoundManager;
 import com.hardcoremario.view.ParticleSystem;
 import java.awt.*;
-import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 
 /**
@@ -91,8 +90,6 @@ public class BossCore extends LivingEntity {
             g.drawImage(img, drawX, drawY, width, height, null);
         } else {
             // Procedural glowing plasma sphere
-            double pulse = Math.sin(animTimer);
-
             // Outer glow
             g.setColor(new Color(0, 230, 255, 60));
             g.fillOval(drawX - 4, drawY - 4, width + 8, height + 8);

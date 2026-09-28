@@ -1,7 +1,6 @@
 package com.hardcoremario.model.entity;
 
 import com.hardcoremario.model.item.AmmoPack;
-import com.hardcoremario.model.item.HealthPack;
 import com.hardcoremario.model.world.Level;
 import java.util.Random;
 
