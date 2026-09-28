@@ -98,7 +98,7 @@ public class Level implements Updatable, Renderable {
 
     public void handleInput(InputHandler input, Camera camera, double deltaTime) {
         if (!gameOver && !missionComplete) {
-            player.handleInput(input, this, camera.getX(), camera.getY(), deltaTime);
+            player.handleInput(input, this, camera.getX(), camera.getY(), camera.getZoom(), deltaTime);
         }
     }
 
@@ -321,12 +321,19 @@ public class Level implements Updatable, Renderable {
 
     @Override
     public void render(Graphics2D g, double offsetX, double offsetY) {
-        // Render tiles
+        render(g, offsetX, offsetY, 1.0);
+    }
+
+    public void render(Graphics2D g, double offsetX, double offsetY, double zoom) {
+        double visibleW = Constants.SCREEN_WIDTH / zoom;
+        double visibleH = Constants.SCREEN_HEIGHT / zoom;
+
+        // Render tiles (culling expanded based on current FOV/zoom)
         for (Tile tile : tiles) {
             if (!tile.isActive()) continue;
             // Cull offscreen tiles
-            if (tile.getX() + tile.getWidth() >= offsetX && tile.getX() <= offsetX + Constants.SCREEN_WIDTH &&
-                tile.getY() + tile.getHeight() >= offsetY && tile.getY() <= offsetY + Constants.SCREEN_HEIGHT) {
+            if (tile.getX() + tile.getWidth() >= offsetX && tile.getX() <= offsetX + visibleW &&
+                tile.getY() + tile.getHeight() >= offsetY && tile.getY() <= offsetY + visibleH) {
                 tile.render(g, offsetX, offsetY);
             }
         }

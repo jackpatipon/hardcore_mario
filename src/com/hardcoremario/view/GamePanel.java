@@ -3,6 +3,7 @@ package com.hardcoremario.view;
 import com.hardcoremario.core.AssetManager;
 import com.hardcoremario.core.Camera;
 import com.hardcoremario.core.InputHandler;
+import com.hardcoremario.model.entity.Boss;
 import com.hardcoremario.model.entity.Player;
 import com.hardcoremario.model.world.Level;
 import com.hardcoremario.util.Constants;
@@ -206,7 +207,18 @@ public class GamePanel extends JPanel {
             level.handleInput(inputHandler, camera, deltaTime);
             level.update(deltaTime);
             camera.setBounds(level.getMinX(), level.getMinY(), level.getMaxX(), level.getMaxY());
-            camera.update(level.getPlayer().getCenterX(), level.getPlayer().getCenterY(), deltaTime);
+
+            // Boss dynamic framing: Keep player and boss in frame when all cores are destroyed
+            Boss boss = level.getBoss();
+            boolean bossFramingActive = (level.getCurrentStage() == 4
+                    && boss != null
+                    && !boss.isDead()
+                    && !level.getPlayer().isDead()
+                    && level.getActiveBossCoreCount() == 0);
+            double bX = (boss != null) ? boss.getCenterX() : level.getPlayer().getCenterX();
+            double bY = (boss != null) ? boss.getCenterY() : level.getPlayer().getCenterY();
+
+            camera.update(level.getPlayer().getCenterX(), level.getPlayer().getCenterY(), bX, bY, bossFramingActive, deltaTime);
         }
     }
 
@@ -222,6 +234,7 @@ public class GamePanel extends JPanel {
 
         double camX = camera.getX();
         double camY = camera.getY();
+        double zoom = camera.getZoom();
 
         if (gameState == GameState.TITLE) {
             // Render ambient parallax in background behind menu
@@ -234,8 +247,13 @@ public class GamePanel extends JPanel {
         // 1. Render Parallax Backgrounds
         renderBackgrounds(g2d, camX, camY);
 
-        // 2. Render Level (Tiles, Enemies, Player, Bullets, Items, Particles)
-        level.render(g2d, camX, camY);
+        // 2. Render Level (Tiles, Enemies, Player, Bullets, Items, Particles) with dynamic camera zoom
+        Graphics2D worldG = (Graphics2D) g2d.create();
+        if (Math.abs(zoom - 1.0) > 0.0001) {
+            worldG.scale(zoom, zoom);
+        }
+        level.render(worldG, camX, camY, zoom);
+        worldG.dispose();
 
         // 3. Render HUD & UI (HP, Ammo, Crosshair, Overlays)
         hud.render(g2d, level, inputHandler);

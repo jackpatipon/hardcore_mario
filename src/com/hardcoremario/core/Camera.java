@@ -15,6 +15,9 @@ public class Camera {
     private double maxX = 3600;
     private double maxY = 1400;
 
+    private double zoom = 1.0;
+    private double targetZoom = 1.0;
+
     public Camera(double levelWidth, double levelHeight) {
         this(0, 0, levelWidth, levelHeight);
     }
@@ -37,44 +40,89 @@ public class Camera {
     }
 
     public void snapTo(double playerCenterX, double playerCenterY) {
-        targetX = playerCenterX - Constants.SCREEN_WIDTH / 2.0;
-        targetY = playerCenterY - Constants.SCREEN_HEIGHT / 2.0;
+        this.zoom = 1.0;
+        this.targetZoom = 1.0;
+        double halfVisibleW = (Constants.SCREEN_WIDTH / 2.0) / zoom;
+        double halfVisibleH = (Constants.SCREEN_HEIGHT / 2.0) / zoom;
+        targetX = playerCenterX - halfVisibleW;
+        targetY = playerCenterY - halfVisibleH;
         clampTarget();
         this.x = targetX;
         this.y = targetY;
     }
 
     private void clampTarget() {
-        if (maxX - minX >= Constants.SCREEN_WIDTH) {
+        double visibleW = Constants.SCREEN_WIDTH / zoom;
+        double visibleH = Constants.SCREEN_HEIGHT / zoom;
+
+        if (maxX - minX >= visibleW) {
             if (targetX < minX) targetX = minX;
-            if (targetX > maxX - Constants.SCREEN_WIDTH) targetX = maxX - Constants.SCREEN_WIDTH;
+            if (targetX > maxX - visibleW) targetX = maxX - visibleW;
         } else {
-            targetX = minX;
+            targetX = minX - (visibleW - (maxX - minX)) / 2.0;
         }
 
-        if (maxY - minY >= Constants.SCREEN_HEIGHT) {
+        if (maxY - minY >= visibleH) {
             if (targetY < minY) targetY = minY;
-            if (targetY > maxY - Constants.SCREEN_HEIGHT) targetY = maxY - Constants.SCREEN_HEIGHT;
+            if (targetY > maxY - visibleH) targetY = maxY - visibleH;
         } else {
-            targetY = minY;
+            targetY = minY - (visibleH - (maxY - minY)) / 2.0;
         }
     }
 
     public void update(double playerCenterX, double playerCenterY, double deltaTime) {
-        // Target is centering the player on the screen
-        targetX = playerCenterX - Constants.SCREEN_WIDTH / 2.0;
-        targetY = playerCenterY - Constants.SCREEN_HEIGHT / 2.0;
+        update(playerCenterX, playerCenterY, 0, 0, false, deltaTime);
+    }
+
+    public void update(double playerCenterX, double playerCenterY, double bossCenterX, double bossCenterY, boolean bossFramingActive, double deltaTime) {
+        double targetCenterX;
+        double targetCenterY;
+
+        if (bossFramingActive) {
+            // Margin around player and boss so neither is clipped by screen edges
+            double marginX = 360.0;
+            double marginY = 240.0;
+            double spanX = Math.abs(playerCenterX - bossCenterX) + marginX;
+            double spanY = Math.abs(playerCenterY - bossCenterY) + marginY;
+
+            double neededZoomX = Constants.SCREEN_WIDTH / spanX;
+            double neededZoomY = Constants.SCREEN_HEIGHT / spanY;
+            double neededZoom = Math.min(neededZoomX, neededZoomY);
+
+            // Zoom bounds: closest is normal view (1.0), minimum zoom limit is 0.45
+            targetZoom = Math.max(0.45, Math.min(1.0, neededZoom));
+
+            targetCenterX = (playerCenterX + bossCenterX) / 2.0;
+            targetCenterY = (playerCenterY + bossCenterY) / 2.0;
+        } else {
+            targetZoom = 1.0;
+            targetCenterX = playerCenterX;
+            targetCenterY = playerCenterY;
+        }
+
+        // Smooth zoom transition
+        double zoomLerp = Math.min(1.0, 4.0 * deltaTime);
+        zoom += (targetZoom - zoom) * zoomLerp;
+
+        // Viewport bounds in world units
+        double halfVisibleW = (Constants.SCREEN_WIDTH / 2.0) / zoom;
+        double halfVisibleH = (Constants.SCREEN_HEIGHT / 2.0) / zoom;
+        targetX = targetCenterX - halfVisibleW;
+        targetY = targetCenterY - halfVisibleH;
 
         clampTarget();
 
-        // Smooth lerp follow (interpolate towards target)
-        double lerpFactor = Math.min(1.0, 7.5 * deltaTime);
+        // Smooth position follow
+        double lerpFactor = Math.min(1.0, 6.5 * deltaTime);
         x += (targetX - x) * lerpFactor;
         y += (targetY - y) * lerpFactor;
     }
 
     public double getX() { return x; }
     public double getY() { return y; }
+    public double getZoom() { return zoom; }
+    public double getTargetZoom() { return targetZoom; }
+    public void setZoom(double zoom) { this.zoom = zoom; this.targetZoom = zoom; }
     public double getMinX() { return minX; }
     public double getMinY() { return minY; }
     public double getMaxX() { return maxX; }

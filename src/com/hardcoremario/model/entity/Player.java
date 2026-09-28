@@ -45,11 +45,15 @@ public class Player extends LivingEntity {
     }
 
     public void handleInput(InputHandler input, Level level, double cameraX, double cameraY, double deltaTime) {
+        handleInput(input, level, cameraX, cameraY, 1.0, deltaTime);
+    }
+
+    public void handleInput(InputHandler input, Level level, double cameraX, double cameraY, double cameraZoom, double deltaTime) {
         if (isDead()) return;
 
-        // 1. Aiming angle calculation based on mouse cursor in world coordinates
-        double mouseWorldX = input.getMouseX() + cameraX;
-        double mouseWorldY = input.getMouseY() + cameraY;
+        // 1. Aiming angle calculation based on mouse cursor in world coordinates (accounting for dynamic camera zoom)
+        double mouseWorldX = cameraX + (input.getMouseX() / cameraZoom);
+        double mouseWorldY = cameraY + (input.getMouseY() / cameraZoom);
         this.aimAngle = position.angleToDegrees(mouseWorldX, mouseWorldY);
 
         // Turn facing direction based on mouse position relative to player center
