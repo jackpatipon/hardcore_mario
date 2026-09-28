@@ -11,7 +11,7 @@ public class Camera {
     private double targetX;
     private double targetY;
     private double minX = 0;
-    private double minY = 0;
+    private double minY = -400.0;
     private double maxX = 3600;
     private double maxY = 1400;
 
@@ -34,7 +34,7 @@ public class Camera {
 
     public void setBounds(double minX, double minY, double maxX, double maxY) {
         this.minX = minX;
-        this.minY = minY;
+        this.minY = Math.min(minY, -400.0);
         this.maxX = maxX;
         this.maxY = maxY;
     }
@@ -45,7 +45,7 @@ public class Camera {
         double halfVisibleW = (Constants.SCREEN_WIDTH / 2.0) / zoom;
         double halfVisibleH = (Constants.SCREEN_HEIGHT / 2.0) / zoom;
         targetX = playerCenterX - halfVisibleW;
-        targetY = playerCenterY - halfVisibleH;
+        targetY = (playerCenterY - 40.0) - halfVisibleH;
         clampTarget();
         this.x = targetX;
         this.y = targetY;
@@ -79,25 +79,34 @@ public class Camera {
         double targetCenterY;
 
         if (bossFramingActive) {
-            // Margin around player and boss so neither is clipped by screen edges
+            // Horizontal framing margin
             double marginX = 360.0;
-            double marginY = 240.0;
             double spanX = Math.abs(playerCenterX - bossCenterX) + marginX;
-            double spanY = Math.abs(playerCenterY - bossCenterY) + marginY;
-
             double neededZoomX = Constants.SCREEN_WIDTH / spanX;
+
+            // Vertical framing: generous top margin so player/boss is never obscured by
+            // the Boss HP Bar, Stage Title, or difficulty badge at the top of the screen
+            double marginTop = 340.0;
+            double marginBottom = 160.0;
+            double dy = Math.abs(playerCenterY - bossCenterY);
+            double spanY = dy + marginTop + marginBottom;
             double neededZoomY = Constants.SCREEN_HEIGHT / spanY;
+
             double neededZoom = Math.min(neededZoomX, neededZoomY);
 
             // Zoom bounds: closest is normal view (1.0), minimum zoom limit is 0.45
             targetZoom = Math.max(0.45, Math.min(1.0, neededZoom));
 
             targetCenterX = (playerCenterX + bossCenterX) / 2.0;
-            targetCenterY = (playerCenterY + bossCenterY) / 2.0;
+
+            // Offset vertical focus upward to give ample headroom above the higher entity
+            double minEntityY = Math.min(playerCenterY, bossCenterY);
+            double maxEntityY = Math.max(playerCenterY, bossCenterY);
+            targetCenterY = (minEntityY - marginTop + maxEntityY + marginBottom) / 2.0;
         } else {
             targetZoom = 1.0;
             targetCenterX = playerCenterX;
-            targetCenterY = playerCenterY;
+            targetCenterY = playerCenterY - 40.0;
         }
 
         // Smooth zoom transition

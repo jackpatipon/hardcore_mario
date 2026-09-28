@@ -263,7 +263,7 @@ public class DrawioLevelLoader {
             }
 
             double boundMinX = Math.min(0.0, minX);
-            double boundMinY = Math.min(0.0, minY < 0 ? minY - 260.0 : 0.0);
+            double boundMinY = Math.min(0.0, minY) - 400.0;
             double boundMaxX = Math.max(3400.0, maxX + 200.0);
             double boundMaxY = Math.max(1400.0, maxY + 100.0);
 
